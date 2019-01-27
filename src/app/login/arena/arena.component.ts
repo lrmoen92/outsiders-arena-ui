@@ -1,15 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Battle, Character, Player } from './model/api-models';
+import { Character, Battle, Player } from 'src/app/model/api-models';
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  selector: 'arena-root',
+  templateUrl: './arena.component.html',
+  styleUrls: ['./arena.component.css']
 })
-export class AppComponent implements OnInit {
-
-	httpClient : HttpClient;
-	
+export class ArenaComponent implements OnInit {
 	title : string = 'outsiders-arena-ui';
 	prefixHttp : string = 'http://';
 	prefixWs : string = 'ws://';
@@ -17,18 +14,15 @@ export class AppComponent implements OnInit {
 	apiUrl : string = this.prefixHttp + this.domain;
 	wsUrl : string = this.prefixWs + this.domain;
 	characterUrl : string = 'api/character/';
-
 	playerUrl : string = 'api/player/';
 	arenaUrl : string = 'api/player/arena/';
 	arenaWs : string = 'arena/';
-
-
 	connected : Boolean = false;
-	allCharacters : Array<Character> = [];
+	battleCharacters : Array<Character> = [];
 	battle : Battle;
 	isPlayerOne : Boolean;
 	webSocket : WebSocket = null;
-
+	httpClient : HttpClient;
 	playerId : Number;
 	player : Player;
 	arenaId : Number;
@@ -61,7 +55,7 @@ export class AppComponent implements OnInit {
     this.httpClient.get(this.apiUrl + this.characterUrl).subscribe(
       x => {
         console.log(x);
-        this.allCharacters = <any[]> x;
+        this.battleCharacters = <any[]> x;
       },
       y => {
 
@@ -193,7 +187,7 @@ handleMessage() {
 
 handleInit(msg) {
 	
-	this.allCharacters = msg.characters;
+	this.battleCharacters = msg.characters;
 	this.isPlayerOne = msg.battle.playerIdOne === this.playerId;
 
 	if (this.isPlayerOne){

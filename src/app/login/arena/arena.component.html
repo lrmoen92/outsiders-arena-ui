@@ -1,21 +1,5 @@
-<h1>
-  WELCOME TO OUTSIDERS-ARENA
-</h1>
-<ul>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Login</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/cli">Character Information</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Battle</a></h2>
-  </li>
-</ul>
 
 <div>
-
-
   <div class="resource-manager">
     <div id="splashscreen">
       <input [(ngModel)]="playerName" placeholder="Display Name"/>
@@ -44,20 +28,24 @@
         <div id="energySpend">
     
         </div>
-        <button [hidden]="tradeButton_hidden">
+        <button hidden="tradeButton_hidden">
             Trade
         </button>
     </div>
 
     <div id="actions">
-      <button [hidden]="finishButton_hidden">
+      <button hidden="finishButton_hidden">
         Finish Turn
       </button>
     </div>
     
     <div id="enemyInfo">
+      
     </div>
   </div>
+    
+
+
 
   <div class="ally-team">
   
@@ -129,5 +117,3 @@
   </div>
 
 </div>
-
-<router-outlet></router-outlet>
