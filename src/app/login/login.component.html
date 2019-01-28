@@ -1,3 +1,21 @@
-<div>
-NEW ---- COMPONENT
+<div *ngIf="!loggedIn">
+    <div id="splashscreen">
+        <input [(ngModel)]="playerName" placeholder="Display Name"/>
+        <input [(ngModel)]="playerAvatarUrl" placeholder="Avatar URL"/>
+        <br />
+        <button (click)="login()">
+          LOGIN
+        </button>
+    </div>
 </div>
+
+<arena-root *ngIf="loggedIn"
+            [allCharacters]="allCharacters"
+            [player]="player">
+
+</arena-root>
+
+<chat-root *ngIf="loggedIn"
+            [player]="player">
+
+</chat-root>

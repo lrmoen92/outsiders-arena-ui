@@ -18,4 +18,4 @@ import { ArenaComponent } from './arena.component';
   providers: [],
   bootstrap: [ArenaComponent]
 })
-export class AppModule { }
+export class ArenaModule { }

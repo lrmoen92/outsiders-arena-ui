@@ -1,14 +1,7 @@
-
 <div>
+
   <div class="resource-manager">
-    <div id="splashscreen">
-      <input [(ngModel)]="playerName" placeholder="Display Name"/>
-      <input [(ngModel)]="playerAvatarUrl" placeholder="Avatar URL"/>
-      <br />
-      <button id="connectButton" (click)="sendConnectRequest()" [disabled]="createPlayerButton_disabled">
-        CREATE PLAYER
-      </button>
-    </div>
+
     <div class="playerBattleInfo" [hidden]="playerBattleInfo_hidden">
       <input id="playerNameMatchMakingInput" [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
       <button id="findBattle" (click)="findBattle()">
@@ -28,31 +21,27 @@
         <div id="energySpend">
     
         </div>
-        <button hidden="tradeButton_hidden">
+        <button [hidden]="tradeButton_hidden">
             Trade
         </button>
     </div>
 
     <div id="actions">
-      <button hidden="finishButton_hidden">
+      <button [hidden]="finishButton_hidden">
         Finish Turn
       </button>
     </div>
     
     <div id="enemyInfo">
-      
     </div>
   </div>
-    
-
-
 
   <div class="ally-team">
   
     <div class="ally">
       <p>Character 1:</p>
       <select class="chars">
-        <option *ngFor="let character of battleCharacters" [value]="character.id">
+        <option *ngFor="let character of allCharacters" [value]="character.id">
           {{ character.name }}
         </option>
       </select>
@@ -70,7 +59,7 @@
     <div class="ally">
       <p>Character 2:</p>
       <select class="chars">
-        <option *ngFor="let character of battleCharacters" [value]="character.id">
+        <option *ngFor="let character of allCharacters" [value]="character.id">
           {{ character.name }}
         </option>
       </select>
@@ -88,7 +77,7 @@
     <div class="ally">
       <p>Character 3:</p>
       <select class="chars">
-        <option *ngFor="let character of battleCharacters" [value]="character.id">
+        <option *ngFor="let character of allCharacters" [value]="character.id">
           {{ character.name }}
         </option>
       </select>
@@ -102,7 +91,6 @@
       </div>
     </div>
   </div>
-		
     
   <div class="enemy-team">
     <div class="enemy">

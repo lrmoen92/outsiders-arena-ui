@@ -1,4 +1,4 @@
-/* * {
+/* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -10,6 +10,18 @@ body {
     grid-template-columns: repeat(20, 1fr);
     grid-template-rows: repeat(20, 1fr);
 }
+*/
+nav-root {
+    width: 30%;
+    height: 100%;
+    float: left;
+}
+login-root {
+    width: 70%;
+    height: 100%;
+    float: right;
+}
+/*
 .resource-manager {
 	display: flex;
 	justify-content: space-around;

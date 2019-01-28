@@ -1,31 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, Input, } from '@angular/core';
+import { Character } from '../model/api-models';
 
 @Component({
   selector: 'nav-root',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.css']
 })
-export class NavComponent implements OnInit {
-  
-	httpClient : HttpClient;
+export class NavComponent {
 
-  constructor(httpClient : HttpClient) {
-    this.httpClient = httpClient;
-  }
-
-  ngOnInit() {
-
-    this.httpClient.get('').subscribe(
-      x => {
-        console.log(x);
-      },
-      y => {
-
-      },
-      () => {
-
-      }
-    );
-  }
+  @Input()
+  allCharacters : Array<Character>;
 }
