@@ -7,7 +7,6 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './login/login.component';
 import { NavComponent } from './nav/nav.component';
-import { ChatComponent } from './login/chat/chat.component';
 import { ArenaComponent } from './login/arena/arena.component';
 
 @NgModule({
@@ -15,7 +14,6 @@ import { ArenaComponent } from './login/arena/arena.component';
     AppComponent,
     LoginComponent,
     NavComponent,
-    ChatComponent,
     ArenaComponent
   ],
   imports: [

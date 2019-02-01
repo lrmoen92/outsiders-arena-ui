@@ -1,107 +1,101 @@
 <div>
-
-  <div class="resource-manager">
-
-    <div class="playerBattleInfo" [hidden]="playerBattleInfo_hidden">
-      <input id="playerNameMatchMakingInput" [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
-      <button id="findBattle" (click)="findBattle()">
-        FIND BATTLE
-      </button>
+  <div *ngIf="!inBattle" id="pre-battle">
+    <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
+    <br>
+    <div id="character-select">
+      <img *ngFor="let char of allCharacters" (click)="addCharacter(char.id)" [src]="char.avatarUrl" class="ally-portrait-small">
     </div>
 
-    <div id="energy">
-        <div id="energyTotals">
-
-        </div>
-  
-        <div id="energyTrade">
-  
-        </div>
-  
-        <div id="energySpend">
-    
-        </div>
-        <button [hidden]="tradeButton_hidden">
-            Trade
-        </button>
+    <div>
+      TEAM:
+    </div>
+    <div *ngFor="let ally of allies">
+      <img [src]="ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
     </div>
 
-    <div id="actions">
-      <button [hidden]="finishButton_hidden">
-        Finish Turn
-      </button>
-    </div>
-    
-    <div id="enemyInfo">
-    </div>
+    <button (click)="findBattle()">
+      FIND BATTLE
+    </button>
   </div>
 
-  <div class="ally-team">
-  
-    <div class="ally">
-      <p>Character 1:</p>
-      <select class="chars">
-        <option *ngFor="let character of allCharacters" [value]="character.id">
-          {{ character.name }}
-        </option>
-      </select>
-      <div class="ally-ability-menu">
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
+  <div *ngIf="inBattle" id="battle">
+    <div id="header">
+      <div id="playerInfo">
+        <img [src]="player.avatarUrl" id="player-portrait">
+        {{ player.displayName }}
       </div>
-      <div class="ally-ability-menu-desc">
 
-      </div>
-    </div>
-    
-    <div class="ally">
-      <p>Character 2:</p>
-      <select class="chars">
-        <option *ngFor="let character of allCharacters" [value]="character.id">
-          {{ character.name }}
-        </option>
-      </select>
-      <div class="ally-ability-menu">
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-      </div>
-      <div class="ally-ability-menu-desc">
+      <div id="centerPanel">
+        <div id="timer">
+        </div>
 
-      </div>
-    </div>
-    
-    <div class="ally">
-      <p>Character 3:</p>
-      <select class="chars">
-        <option *ngFor="let character of allCharacters" [value]="character.id">
-          {{ character.name }}
-        </option>
-      </select>
-      <div class="ally-ability-menu">
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-        <div class="ally-ability"></div>
-      </div>
-      <div class="ally-ability-menu-desc">
-      </div>
-    </div>
-  </div>
-    
-  <div class="enemy-team">
-    <div class="enemy">
-      ENEMY 1
-    </div>
-    <div class="enemy">
-      ENEMY 2
-    </div>
-    <div class="enemy">
-      ENEMY 3
-    </div>
-  </div>
+        <div id="resources">
+          <div id="energy">
+          </div>
 
+          <div id="spent">
+          </div>
+
+          <div id="actions">
+            <button>
+              Trade
+            </button>
+            <button>
+              Finish Turn
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="opponentInfo">
+        {{ opponent.displayName }}
+        <img [src]="opponent.avatarUrl" id="opponent-portrait">
+      </div>
+    </div>
+
+    <div id="body">
+      <div id="allies">
+        <div class="ally" *ngFor="let ally of allies">
+          <div class="ally-info">
+            <img [src]="ally.avatarUrl" class="ally-portrait">
+            {{ ally.name }}
+          </div>
+          <div class="ally-abilities">
+            <div class="ally-ability">
+              <img [src]="ally.slot1.abilityUrl" class="ally-ability-portrait">
+              <div>
+                {{ ally.slot1.name }}
+              </div>
+            </div>
+            <div class="ally-ability">
+              <img [src]="ally.slot2.abilityUrl" class="ally-ability-portrait">
+              <div>
+                {{ ally.slot2.name }}
+              </div>
+            </div>
+            <div class="ally-ability">
+              <img [src]="ally.slot3.abilityUrl" class="ally-ability-portrait">
+              <div>
+                {{ ally.slot3.name }}
+              </div>
+            </div>
+            <div class="ally-ability">
+              <img [src]="ally.slot4.abilityUrl" class="ally-ability-portrait">
+              <div>
+                {{ ally.slot4.name }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="enemies">
+        <div class="enemy" *ngFor="let enemy of enemies">
+          <div class="enemy-info">
+            <img [src]="enemy.avatarUrl" class="enemy-portrait">
+          </div>
+          {{ enemy.name }}
+        </div>
+      </div>
+    </div>
 </div>

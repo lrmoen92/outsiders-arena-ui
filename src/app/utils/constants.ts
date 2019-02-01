@@ -1,8 +1,8 @@
 export const URLS = {
-    playerArena : 'http://localhost:8817/api/player/arena/',
-    playerLogin : 'http://localhost:8817/api/player/',
-    characters : 'http://localhost:8817/api/character/',
+    playerArena : 'http://66.242.90.163:8171/api/player/arena/',
+    playerLogin : 'http://66.242.90.163:8171/api/player/',
+    characters : 'http://66.242.90.163:8171/api/character/',
 
-    battleSocket : 'ws://localhost:8817/arena/',
-    chatSocket : 'ws://localhost:8817/chat/'
+    battleSocket : 'ws://66.242.90.163:8171/arena/',
+    chatSocket : 'ws://66.242.90.163:8171/chat/'
 }

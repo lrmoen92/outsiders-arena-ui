@@ -1,0 +1,14 @@
+arena-root {
+    position : fixed;
+    display : block;
+}
+
+#splashscreen {
+    width: 40%;
+    height: 40%;
+    left : 30%;
+    right : 30%;
+    top : 30%;
+    bottom : 30%;
+    position : absolute;
+}

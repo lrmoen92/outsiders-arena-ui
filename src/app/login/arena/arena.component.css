@@ -1,158 +1,111 @@
-/* * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
 body {
-    height: 100%;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(20, 1fr);
-    grid-template-rows: repeat(20, 1fr);
+    font-size: 10px;
 }
-.resource-manager {
-	display: flex;
-	justify-content: space-around;
-	align-items: center;
-    background-color: darkgoldenrod;
-    grid-column: 5 / 17;
-    grid-row: 1 / 4;
-} */
-/* 
-#moveDiv {
-	visibility: hidden;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background-color: gray;
-    align-items: center;
-    grid-column: 5 / 17;
-    grid-row: 4 / 5;
+
+.ally-portrait {
+    width : 100px;
+    height : 100px;
+    float : left;
 }
-.idDiv {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background-color: darkgoldenrod;
-    align-items: center;
-    grid-column: 5 / 17;
-    grid-row: 20 / 21;
+
+.ally-portrait-small {
+    width : 50px;
+    height : 50px;
 }
-.idDiv > :nth-child(1),
-.idDiv > :nth-child(3) {
-    font-weight: bold;
+
+.enemy-portrait {
+    width : 100px;
+    height : 100px;
 }
-.playerBattleInfo {
-	display: flex;
+
+.ally-ability-portrait {
+    width : 100px;
+    height : 100px;
 }
-.playerBattleInfo > div {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-}
-#enemyInfo {
-	display: flex;
-}
-#enemyInfo > div {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-}
-#energy {
-	display: flex;
-}
-#energy > div {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-} */
-/* .ally-team {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: flex-end;
-    background-color: saddlebrown;
-    grid-column: 2 / 5;
-    grid-row: 5 / 19;
-}
-.enemy-team { 
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: flex-start;
-    background-color: saddlebrown;
-    grid-column: 17 / 20;
-    grid-row: 5 / 19;
-} */
-/* }
-.ally {
-    position: relative;
-    width: 9vw;
-	height: 9vw;
-    border: 2px solid black;
-    background-color: #eee;
-    margin-right: 5%;
-}
-.ally:last-of-type {
-    margin-bottom: 1vh;
-}
-.enemy {
-    position: relative;
-    width: 9vw;
-	height: 9vw;
-    border: 2px solid black;
-    background-color: #eee;
-    margin-left: 5%;
-}
-.enemy:last-of-type {
-    margin-bottom: 1vh;
-}
-.ally-ability-menu {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-    position: absolute;
-    top: 15%;
-    left: 100%;
-    height: 70%;
-    width: 300%;
-    border: 2px solid black;
-    background-color: #d2b48c;
-}
-.ally-ability-menu-desc {
-    display: block;
-    position: absolute;
-    top: 85%;
-    left: 100%;
-    height: 150%;
-    width: 400%;
-    border: 2px solid black;
-    background-color: #d4d1ce;
-}
-.healthbar {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	position: absolute;
-    top: 100%;
-    right: 5%;
-    height: 15%;
-    width: 90%;
-    border: 2px solid black;
-    background-color: green;
-	color: #eee;
-	user-select: none;
-}
-.healthbar p {
-	height: 50%;
-}
+
 .ally-ability {
-    height: 80%;
-    width: 20%;
-    border: 1px solid black;
-    background-color: dodgerblue;
+    float: left;
+    height: 100%;
+    width: 25%;
 }
-.chars {
-    max-width: 100%;
-} */
+
+.ally-info {
+    float: left;
+    width: 20%;
+}
+
+.enemy-info {
+    float: left;
+    width: 100%;
+}
+
+.ally-abilities {
+    width: 80%;
+    float: left;
+}
+
+#pre-battle {
+    width : 100%;
+}
+
+#character-select {
+    width : 100%;
+}
+
+#battle {
+    width : 100%;
+}
+
+#player-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+#opponent-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+#header {
+    width : 100%;
+    height : 30%;
+}
+
+#body {
+    width : 100%;
+    height : 70%;
+}
+
+#allies {
+    height : 100%;
+    width : 80%;
+    float : left;
+}
+
+#enemies {
+    height : 100%;
+    width : 20%;
+    float : left;
+}
+
+#playerInfo {
+    width : 30%;
+    height : 100%;
+    float: left;
+    display: block;
+}
+
+#opponentInfo {
+    width : 30%;
+    height : 100%;
+    float: left;
+    display: block;
+}
+
+#centerPanel {
+    width : 40%;
+    height : 100%;
+    float: left;
+    display: block;
+}
+
