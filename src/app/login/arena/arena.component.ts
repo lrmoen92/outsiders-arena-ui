@@ -375,7 +375,7 @@ connectByPlayerName(name : string) {
   // secondary array (holding turn ability order separately)
   
   addAbilityToReel(ability) {
-	this.turnEffectOrder.push("ABILITY");
+	this.turnEffectOrder.push(ability.name);
 	let tempEffect = new Effect();
 	tempEffect.instanceId = "ABILITY";
 	tempEffect.avatarUrl = ability.abilityUrl;
