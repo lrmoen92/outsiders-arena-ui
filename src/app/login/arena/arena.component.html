@@ -1,4 +1,5 @@
-<div>
+<div id="battleDiv">
+
   <div *ngIf="!inBattle" id="pre-battle">
     <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
     <br>
@@ -16,10 +17,12 @@
     <button (click)="findBattle()">
       FIND BATTLE
     </button>
+    <!-- <span class="fas fa-spinner loading"></span> -->
   </div>
 
   <div *ngIf="inBattle" id="battle">
     <div id="header">
+
       <div id="playerInfo">
         <img [src]="player.avatarUrl" id="player-portrait">
         {{ player.displayName }}
@@ -30,17 +33,34 @@
         </div>
 
         <div id="resources">
-          <div id="energy">
+          <div *ngIf="hasTurn" id="energy">
+            
+            <div id="energy-pool">
+              <div class="left-text">ENERGY</div>
+              <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy)" class="energy-strength energy"></div>
+              <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy)" class="energy-dexterity energy"></div>
+              <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy)" class="energy-arcana energy"></div>
+              <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy)" class="energy-divinity energy"></div>
+            </div>
+            
+          <br>
+
+            <div id="spent">
+              <div class="left-text">SPENT</div>
+              <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy)" class="energy-strength energy"></div>
+              <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy)" class="energy-dexterity energy"></div>
+              <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy)" class="energy-arcana energy"></div>
+              <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy)" class="energy-divinity energy"></div>
+            </div>
           </div>
 
-          <div id="spent">
-          </div>
+          <br>
 
           <div id="actions">
             <button>
               Trade
             </button>
-            <button>
+            <button (click)="sendTurnEnd()" [disabled]="!hasTurn">
               Finish Turn
             </button>
           </div>
@@ -54,48 +74,78 @@
     </div>
 
     <div id="body">
+
       <div id="allies">
+
         <div class="ally" *ngFor="let ally of allies">
+
           <div class="ally-info">
-            <img [src]="ally.avatarUrl" class="ally-portrait">
-            {{ ally.name }}
+            <img [src]="ally.avatarUrl" class="ally-portrait" (click)="clickTarget(ally.position)">
+            <div>
+              {{ ally.name }}
+            </div>
           </div>
+          
           <div class="ally-abilities">
-            <div class="ally-ability">
+            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1)">
               <img [src]="ally.slot1.abilityUrl" class="ally-ability-portrait">
               <div>
                 {{ ally.slot1.name }}
               </div>
             </div>
-            <div class="ally-ability">
+            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2)">
               <img [src]="ally.slot2.abilityUrl" class="ally-ability-portrait">
               <div>
                 {{ ally.slot2.name }}
               </div>
             </div>
-            <div class="ally-ability">
+            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3)">
               <img [src]="ally.slot3.abilityUrl" class="ally-ability-portrait">
               <div>
                 {{ ally.slot3.name }}
               </div>
             </div>
-            <div class="ally-ability">
+            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4)">
               <img [src]="ally.slot4.abilityUrl" class="ally-ability-portrait">
               <div>
                 {{ ally.slot4.name }}
               </div>
             </div>
-          </div>
+          </div> 
+
         </div>
+
       </div>
 
       <div id="enemies">
         <div class="enemy" *ngFor="let enemy of enemies">
           <div class="enemy-info">
-            <img [src]="enemy.avatarUrl" class="enemy-portrait">
+            <img [src]="enemy.avatarUrl" (click)="clickTarget(enemy.position)" class="enemy-portrait">
           </div>
-          {{ enemy.name }}
+        </div>
+      </div>
+
+    </div>
+    
+    <br>
+
+    <div id="footer">
+      <div id="abilityWindow">
+        <div id="chosenAbilities" class="ally-abilities">
+          <div class="ally-ability" *ngFor="let effect of turnEffects">
+            <img [src]="effect.avatarUrl">
+            {{ effect.name }}
+          </div>
+        </div>
+        <div id="abilityInfo" *ngIf="hoveredAbility">
+          <div *ngFor="let piece of hoveredAbility.cost" id="abilityCost" [class]="piece">
+          </div>
+          <span>Cooldown: {{ hoveredAbility.cooldown }}</span>
+          <br>
+          <span>{{ hoveredAbility.description }}</span>
+          <br>
         </div>
       </div>
     </div>
+  </div>
 </div>

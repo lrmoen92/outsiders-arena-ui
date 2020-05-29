@@ -23,11 +23,22 @@ export class CharacterInstance {
     hp : Number;
     playerOneCharacter : Boolean;
     // player 1 (1, 2, 3) player 2 (4, 5, 6)
-    location : Number;
+    position : Number;
     characterId : Number;
     effects : Array<Effect>;
     dead : Boolean;
     highlighted : Boolean;
+}
+
+export class AbilityTargetDTO {
+    ability : Ability;
+    targets : Array<Number>;
+}
+
+export class BattleTurnDTO {
+    spentEnergy : Map<string, Number>;
+    effectIds : Array<string>;
+    abilities : Array<AbilityTargetDTO>;
 }
 
 export class Ability {
@@ -49,6 +60,9 @@ export class Ability {
 
 export class Effect {
     duration : Number;
+    avatarUrl : string;
+      // used to identify an effect within the context of a battle (backend assigned)
+    instanceId : string;
     name : string;
     condition : string;
     quality : string;
@@ -66,7 +80,7 @@ export class Effect {
 
 export class Battle {
     id : Number;
-    playerOneStart;
+    playerOneStart : Boolean;
     status : string;
     turn : Number;
     arenaId : Number;
@@ -74,7 +88,7 @@ export class Battle {
     playerIdTwo : Number;
     playerOneTeam : Array<CharacterInstance>;
     playerTwoTeam : Array<CharacterInstance>;
-    playerOneEnergy : Array<string>;
-    playerTwoEnergy : Array<string>;
+    playerOneEnergy : Map<string, Number>;
+    playerTwoEnergy : Map<string, Number>;
 }
 

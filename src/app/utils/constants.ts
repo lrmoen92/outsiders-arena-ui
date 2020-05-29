@@ -1,8 +1,12 @@
-export const URLS = {
-    playerArena : 'http://66.242.90.163:8171/api/player/arena/',
-    playerLogin : 'http://66.242.90.163:8171/api/player/',
-    characters : 'http://66.242.90.163:8171/api/character/',
+export const domainLocal = 'localhost:8817';
+export const domainProd = '66.242.90.163:8171';
+export const domain = domainLocal;
 
-    battleSocket : 'ws://66.242.90.163:8171/arena/',
-    chatSocket : 'ws://66.242.90.163:8171/chat/'
+export const URLS = {
+    playerArena : 'http://' + domain + '/api/player/arena/',
+    playerLogin : 'http://' + domain + '/api/player/',
+    characters : 'http://' + domain + '/api/character/',
+
+    battleSocket : 'ws://' + domain + '/arena/',
+    chatSocket : 'ws://' + domain + '/chat/'
 }

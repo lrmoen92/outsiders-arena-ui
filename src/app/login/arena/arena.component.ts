@@ -1,6 +1,6 @@
-import { Component, OnInit, Input, AfterViewInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Battle, Character, Player, CharacterInstance} from 'src/app/model/api-models';
+import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect} from 'src/app/model/api-models';
 import { URLS } from 'src/app/utils/constants';
 @Component({
   selector: 'arena-root',
@@ -28,6 +28,7 @@ export class ArenaComponent {
 
 	inBattle : Boolean = false;
 	connected : Boolean = false;
+	hasTurn : Boolean = false;
 
 	allies : Array<Character> = [];
 	enemies : Array<Character> = [];
@@ -35,8 +36,75 @@ export class ArenaComponent {
 	battleAllies : Array<CharacterInstance> = [];
 	battleEnemies : Array<CharacterInstance> = [];
 
+	// NGMODELS VVV
+	turnEnergy : Map<string, Number> = new Map();
+	turnStrength : Array<string>;
+	turnDexterity : Array<string>;
+	turnArcana : Array<string>;
+	turnDivinity : Array<string>;
+
+	// NGMODELS VVV
+	spentEnergy : Map<string, Number> = new Map();
+	spentStrength : Array<string>;
+	spentDexterity : Array<string>;
+	spentArcana : Array<string>;
+	spentDivinity : Array<string>;
+
+	// NGMODELS VVV
+
+	// In battle variables VVVV
+
+	hoveredAbility : Ability = null;
+	chosenAbilities : Array<AbilityTargetDTO> = [];
+	turnEffects : Array<Effect> = [];
+	// V identified by effectID, or [ABILITY1, 2, 3]
+	turnEffectOrder : Array<string> = [];
+
+	chosenAbility: Ability;
+	availableTargets: Array<Number> = [];
+
 	constructor(httpClient : HttpClient) {
 		this.httpClient = httpClient;
+	}
+
+	setTurnEnergy(energyMap) {
+		this.turnEnergy = energyMap;
+		this.turnStrength = [];
+		this.turnDexterity = [];
+		this.turnArcana = [];
+		this.turnDivinity = [];
+		for(let x=0; x < this.turnEnergy["STRENGTH"]; x++) {
+			this.turnStrength.push("STRENGTH");
+		}
+		for(let x=0; x < this.turnEnergy["DEXTERITY"]; x++) {
+			this.turnDexterity.push("DEXTERITY");
+		}
+		for(let x=0; x < this.turnEnergy["ARCANA"]; x++) {
+			this.turnArcana.push("ARCANA");
+		}
+		for(let x=0; x < this.turnEnergy["DIVINITY"]; x++) {
+			this.turnDivinity.push("DIVINITY");
+		}
+	}
+
+	setSpentEnergy(energyMap) {
+		this.spentEnergy = energyMap;
+		this.spentStrength = [];
+		this.spentDexterity = [];
+		this.spentArcana = [];
+		this.spentDivinity = [];
+		for(let x=0; x < this.spentEnergy["STRENGTH"]; x++) {
+			this.spentStrength.push("STRENGTH");
+		}
+		for(let x=0; x < this.spentEnergy["DEXTERITY"]; x++) {
+			this.spentDexterity.push("DEXTERITY");
+		}
+		for(let x=0; x < this.spentEnergy["ARCANA"]; x++) {
+			this.spentArcana.push("ARCANA");
+		}
+		for(let x=0; x < this.spentEnergy["DIVINITY"]; x++) {
+			this.spentDivinity.push("DIVINITY");
+		}
 	}
 
 	ngOnInit() {
@@ -56,7 +124,7 @@ export class ArenaComponent {
 		} else if (this.allies.length < 3) {
 			this.allies.push(char);
 		} else {
-			alert ("Take it easy, you got 3 characters.");
+			alert ("Take it easy, you've already got 3 characters.");
 		}
 	}
 
@@ -102,7 +170,9 @@ connectByPlayerName(name : string) {
   // (this is a send message but it made more sense to put it above)
   sendMatchMakingMessage() {
 	  console.log("PlayerID: " + this.player.id);
-	  console.log("Chars: " + this.allies);
+	  this.allies.forEach(a => {
+		console.log("Chars: " + a.name);
+	  })
 	  console.log("ArenaID: " + this.arenaId);
 	  let msg = {
 		  type: "MATCH_MAKING",
@@ -160,6 +230,12 @@ connectByPlayerName(name : string) {
 
 		this.battleAllies = this.battle.playerOneTeam;
 		this.battleEnemies = this.battle.playerTwoTeam;
+		this.setTurnEnergy(this.battle.playerOneEnergy);
+		this.setSpentEnergy(this.newMap());
+		
+		if (this.battle.playerOneStart) {
+			this.hasTurn = true;
+		}
 		
 	  } else {
 		this.player = msg.playerTwo;
@@ -171,6 +247,12 @@ connectByPlayerName(name : string) {
 
 		this.battleAllies = this.battle.playerTwoTeam;
 		this.battleEnemies = this.battle.playerOneTeam;
+		this.setTurnEnergy(this.battle.playerTwoEnergy);
+		this.setSpentEnergy(this.newMap());
+
+		if (!this.battle.playerOneStart) {
+			this.hasTurn = true;
+		}
 	  }
   }
   
@@ -216,23 +298,148 @@ connectByPlayerName(name : string) {
   }
   
   sendTurnEnd() {
+	// BUILD DTO
+
+	let spentEnergy : Map<string, Number> = this.spentEnergy;
+	let abilityDTOs : Array<AbilityTargetDTO> = this.chosenAbilities;
+	let effectIds : Array<string> = this.turnEffectOrder;
+
+	// BUILD DTO HERE
+
+	let battleTurnDTO : BattleTurnDTO = {
+		spentEnergy : spentEnergy,
+		abilities : abilityDTOs,
+		effectIds : effectIds
+	}
+	console.log(battleTurnDTO);
 	  const payload = {
 		  type: "TURN_END",
-		  playerId: this.player.id
-		  // TODO structure a real pojo for how this flow will work (ability order matters... old abilities could be sent too.. list of ablity:target pairs?)
-		  // move1: $("#move1").val(),
-		  // move2: $("#move2").val(),
-		  // move3: $("#move3").val(),
-		  // target1: $("#target1").val(),
-		  // target2: $("#target2").val(),
-		  // target3: $("#target3").val()
+		  playerId: this.player.id,
+		  battleTurnDTO: battleTurnDTO
 	  }
 	  this.webSocket.send(
 		  JSON.stringify(payload)
 	  );
   }
+
+  clickAbility(ability) {
+	  // set ability as variable
+	this.chosenAbility = ability;
+
+	// TODO: 
+	// show this somewhere on ui
+
+	// TODO: 
+	  // call for and show available targets
+
+	  // currently just setting to all :///
+	this.availableTargets = [0, 1, 2, 3, 4, 5];
+
+
+  }
+
+  clickTarget(targetLocation) {
+	if (this.chosenAbility) {
+	// form and add AbiltyTargetDTOS to array
+	let dto = new AbilityTargetDTO;
+	dto.ability = this.chosenAbility;
+	
+	// check chosen ability if it's AOE, or take target enemy
+	if (this.chosenAbility.aoe) {
+		if (targetLocation > 2) {
+			targetLocation = [3, 4, 5]
+		} else {
+			targetLocation = [0, 1, 2]
+		}
+	} else {
+		targetLocation = [targetLocation];
+	}
+	dto.targets = targetLocation;
+
+	// add DTO for backend call
+	this.chosenAbilities.push(dto);
+
+	// add ability to UI
+	this.addAbilityToReel(this.chosenAbility)
+	this.chosenAbility = null;
+	}
+  }
+
+  hideAbilityPanel() {
+	  this.hoveredAbility = null;
+  }
+
+  // even though they're shown on the same reel,
+  // ordering effects and dummyEffects act independently
+  // as finding an effectID with "ABILITY" will look to 
+  // secondary array (holding turn ability order separately)
+  
+  addAbilityToReel(ability) {
+	this.turnEffectOrder.push("ABILITY");
+	let tempEffect = new Effect();
+	tempEffect.instanceId = "ABILITY";
+	tempEffect.avatarUrl = ability.abilityUrl;
+	tempEffect.name = ability.name;
+	this.turnEffects.push(tempEffect);
+  }
+
+  showAbilityInfo(ability) {
+	this.hoveredAbility = ability;
+	console.log(this.hoveredAbility);
+  }
+
+  newMap() {
+	let temp : Map<string, Number> = new Map();
+	temp["STRENGTH"]=0;
+	temp["DEXTERITY"]=0;
+	temp["ARCANA"]=0;
+	temp["DIVINITY"]=0;
+	return temp;
+  }
+
+  copyMap(a : Map<string, Number>) {
+	let temp : Map<string, Number> = new Map();
+	
+	temp["STRENGTH"]=a["STRENGTH"];
+	temp["DEXTERITY"]=a["DEXTERITY"];
+	temp["ARCANA"]=a["ARCANA"];
+	temp["DIVINITY"]=a["DIVINITY"];
+	return temp;
+  }
   
   // END OF SEND MESSAGES
+
+  spendEnergy(energy : string) {
+
+	let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
+
+	let oldVal = temp[energy]
+	temp[energy] = oldVal - 1;
+	
+	let temp2 : Map<string, Number> = this.copyMap(this.spentEnergy);
+
+	let oldVal2 = temp2[energy]
+	temp2[energy] = oldVal2 + 1;
+
+	this.setTurnEnergy(temp);
+	this.setSpentEnergy(temp2);
+  }
+
+  returnEnergy(energy : string) {
+
+	let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
+
+	let oldVal = temp[energy]
+	temp[energy] = oldVal + 1;
+	
+	let temp2 : Map<string, Number> = this.copyMap(this.spentEnergy);
+
+	let oldVal2 = temp2[energy]
+	temp2[energy] = oldVal2 - 1;
+
+	this.setTurnEnergy(temp);
+	this.setSpentEnergy(temp2);
+  }
   
   // HANDLE MESSAGES
   
@@ -273,33 +480,28 @@ connectByPlayerName(name : string) {
   }
   
   handleTurnEnd(msg) {
-// 	  const finishButton = document.getElementById("finishButton");
-// 	  const tradeButton = document.getElementById("tradeButton");
-// 	  if(msg.playerId != this.player.id){
-// 		  console.log("Recieved turn end!");
-// 	  this.finishButton_disabled = false;
-// 	  this.tradeButton_disabled = false;
-  
-// 		  //  TIMER 
-// 		  this.showAbilities();
-// 		  // logic here to show my abilities again
-// 		  // and perform cost check
-		  
-// 		  if (this.isPlayerOne) {
-// 			  this.handleAndFormatEnergy(msg.battle.playerOneEnergy);
-// 		  } else {
-// 			  this.handleAndFormatEnergy(msg.battle.playerTwoEnergy);
-// 		  }
-// 	  } else {
-// 		  console.log("Ended Turn");
-// 	  this.finishButton_disabled = true;
-// 	  this.tradeButton_disabled = true;
-  
-// 		  // TIMER
-// 		  this.hideAbilities();
-// 		  // logic here to hide abilities (this logic could be used on init too)
-// 	  }
-// 	  // recieve message from backend, and then pass turn control and show applied effects/damage from last turn
+	if (msg.playerId === this.player.id) {
+		console.log("You ended your turn");
+	} else {
+		console.log("They ended their turn");
+	}
+
+	this.hasTurn = !this.hasTurn;
+	this.battle = msg.battle;
+
+	if (this.battle.playerIdOne === this.player.id) {
+		this.setTurnEnergy(this.battle.playerOneEnergy);
+		this.setSpentEnergy(this.newMap());
+	} else {
+		this.setTurnEnergy(this.battle.playerTwoEnergy);
+		this.setSpentEnergy(this.newMap());
+	}
+
+	// check and peform damage
+
+	// apply effects visually
+
+	// kill characters
   }
   
   // END OF HANDLE MESSAGES 

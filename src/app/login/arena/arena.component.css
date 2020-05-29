@@ -2,90 +2,9 @@ body {
     font-size: 10px;
 }
 
-.ally-portrait {
-    width : 100px;
-    height : 100px;
-    float : left;
-}
-
-.ally-portrait-small {
-    width : 50px;
-    height : 50px;
-}
-
-.enemy-portrait {
-    width : 100px;
-    height : 100px;
-}
-
-.ally-ability-portrait {
-    width : 100px;
-    height : 100px;
-}
-
-.ally-ability {
-    float: left;
-    height: 100%;
-    width: 25%;
-}
-
-.ally-info {
-    float: left;
-    width: 20%;
-}
-
-.enemy-info {
-    float: left;
-    width: 100%;
-}
-
-.ally-abilities {
-    width: 80%;
-    float: left;
-}
-
-#pre-battle {
-    width : 100%;
-}
-
-#character-select {
-    width : 100%;
-}
-
-#battle {
-    width : 100%;
-}
-
-#player-portrait {
-    width : 100px;
-    height : 100px;
-}
-
-#opponent-portrait {
-    width : 100px;
-    height : 100px;
-}
-
 #header {
     width : 100%;
     height : 30%;
-}
-
-#body {
-    width : 100%;
-    height : 70%;
-}
-
-#allies {
-    height : 100%;
-    width : 80%;
-    float : left;
-}
-
-#enemies {
-    height : 100%;
-    width : 20%;
-    float : left;
 }
 
 #playerInfo {
@@ -107,5 +26,235 @@ body {
     height : 100%;
     float: left;
     display: block;
+}
+
+#energy-pool {
+    float : left;
+}
+
+#spent {
+    float : left;
+}
+
+.left-text {
+    float : left;
+}
+
+.RANDOM {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : black;
+}
+
+.STRENGTH {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : maroon;
+}
+
+.DEXTERITY {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : mediumseagreen;
+    
+}
+
+.ARCANA {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : cornflowerblue;
+    
+}
+
+.DIVINITY {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : white;
+    
+}
+
+.energy {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+}
+
+.energy-strength {
+    background-color : maroon;
+}
+
+.energy-dexterity {
+    background-color : mediumseagreen;
+}
+
+.energy-arcana {
+    background-color : cornflowerblue;
+}
+
+.energy-divinity {
+    background-color : white;
+}
+
+/* 
+.loading {
+    font-size: 50px;
+    animation: load 1s linear infinite;
+} */
+
+/* @keyframes load {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+} */
+
+#body {
+    width : 100%;
+    height : 50%;
+}
+
+.ally-portrait-small {
+    width : 50px;
+    height : 50px;
+}
+
+.ally-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+.enemy-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+.ally-ability-portrait {
+    width : 30px;
+    height : 30px;
+}
+
+.ally {
+    float: left;
+    width: 80%;
+}
+
+.ally-ability {
+    float: left;
+    height: 100%;
+    width: 25%;
+    display: block;
+}
+
+.ally-info {
+    float: left;
+    height: 100%;
+    width: 30%;
+}
+
+.enemy-info {
+    float : left;
+    width: 100%;
+}
+
+.ally-abilities {
+    width: 70%;
+    float: left;
+}
+
+#pre-battle {
+    width : 100%;
+}
+
+#character-select {
+    width : 100%;
+}
+
+#battleDiv {
+    width : 100%;
+    height : 100%;
+}
+
+#battle {
+    width : 100%;
+    height : 100%;
+}
+
+#player-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+#opponent-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+#allies {
+    height : 100%;
+    width : 70%;
+    float : left;
+}
+
+#enemies {
+    height : 100%;
+    width : 30%;
+    float : left;
+}
+
+#footer {
+    float : left;
+    width : 100%;
+    height : 10%;
+}
+
+#abilityWindow {
+    width : 100%;
+    height : 100%;
+}
+
+#abilityInfo {
+    position : fixed;
+    display : block;
+}
+
+#chosenAbilities {
+    float : left;
 }
 
