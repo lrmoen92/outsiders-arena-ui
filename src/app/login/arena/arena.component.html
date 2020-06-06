@@ -30,28 +30,39 @@
 
       <div id="centerPanel">
         <div id="timer">
+          <countdown [config]="config" (start)="onStart()" (finished)="onFinished()">
+
+          </countdown>
         </div>
 
         <div id="resources">
           <div *ngIf="hasTurn" id="energy">
             
             <div id="energy-pool">
-              <div class="left-text">ENERGY</div>
+              <div class="left-text">ENERGY TOTAL: {{ totalEnergy }}</div>
               <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy)" class="energy-strength energy"></div>
               <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy)" class="energy-dexterity energy"></div>
               <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy)" class="energy-arcana energy"></div>
               <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy)" class="energy-divinity energy"></div>
             </div>
             
-          <br>
+            <br>
 
             <div id="spent">
-              <div class="left-text">SPENT</div>
+              <div class="left-text">SPENT TOTAL: {{ totalSpentEnergy }}</div>
               <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy)" class="energy-strength energy"></div>
               <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy)" class="energy-dexterity energy"></div>
               <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy)" class="energy-arcana energy"></div>
               <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy)" class="energy-divinity energy"></div>
             </div>
+
+            <br>
+
+
+            <div id="randoms">
+              <div class="left-text"> {{ randomsNeeded }} MORE ENERGY NEEDED</div>
+            </div>
+            
           </div>
 
           <br>
@@ -83,33 +94,24 @@
             <img [src]="ally.avatarUrl" class="ally-portrait" (click)="clickTarget(ally.position)">
             <div>
               {{ ally.name }}
+            </div>              
+            <div>
+              {{ ally.hp }} / 100 HP
             </div>
           </div>
           
           <div class="ally-abilities">
             <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1)">
               <img [src]="ally.slot1.abilityUrl" class="ally-ability-portrait">
-              <div>
-                {{ ally.slot1.name }}
-              </div>
             </div>
             <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2)">
               <img [src]="ally.slot2.abilityUrl" class="ally-ability-portrait">
-              <div>
-                {{ ally.slot2.name }}
-              </div>
             </div>
             <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3)">
               <img [src]="ally.slot3.abilityUrl" class="ally-ability-portrait">
-              <div>
-                {{ ally.slot3.name }}
-              </div>
             </div>
             <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4)">
               <img [src]="ally.slot4.abilityUrl" class="ally-ability-portrait">
-              <div>
-                {{ ally.slot4.name }}
-              </div>
             </div>
           </div> 
 
@@ -131,20 +133,33 @@
 
     <div id="footer">
       <div id="abilityWindow">
+        <div *ngIf="abilityCurrentlyClicked" id="actions">
+          <button (click)="clickCancel()" [disabled]="!hasTurn">
+            Cancel
+          </button>
+        </div>
+
+
         <div id="chosenAbilities" class="ally-abilities">
           <div class="ally-ability" *ngFor="let effect of turnEffects">
             <img [src]="effect.avatarUrl">
             {{ effect.name }}
           </div>
         </div>
+
+
         <div id="abilityInfo" *ngIf="hoveredAbility">
-          <div *ngFor="let piece of hoveredAbility.cost" id="abilityCost" [class]="piece">
+          <div *ngFor="let energy of hoveredAbility.cost" id="abilityCost" [class]="energy">
           </div>
+          <span>{{ hoveredAbility.name }}</span>
+          <br>
           <span>Cooldown: {{ hoveredAbility.cooldown }}</span>
           <br>
           <span>{{ hoveredAbility.description }}</span>
           <br>
         </div>
+
+
       </div>
     </div>
   </div>
