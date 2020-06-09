@@ -30,10 +30,17 @@ body {
 
 #energy-pool {
     float : left;
+    width : 100%;
 }
 
 #spent {
     float : left;
+    width : 100%;
+}
+
+#randoms {
+    width : 100%;
+
 }
 
 .left-text {
@@ -130,6 +137,15 @@ body {
     background-color : white;
 }
 
+.energyTradeInput {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+}
+
 /* 
 .loading {
     font-size: 50px;
@@ -150,54 +166,6 @@ body {
     height : 50%;
 }
 
-.ally-portrait-small {
-    width : 50px;
-    height : 50px;
-}
-
-.ally-portrait {
-    width : 100px;
-    height : 100px;
-}
-
-.enemy-portrait {
-    width : 100px;
-    height : 100px;
-}
-
-.ally-ability-portrait {
-    width : 30px;
-    height : 30px;
-}
-
-.ally {
-    float: left;
-    width: 80%;
-}
-
-.ally-ability {
-    float: left;
-    height: 100%;
-    width: 25%;
-    display: block;
-}
-
-.ally-info {
-    float: left;
-    height: 100%;
-    width: 30%;
-}
-
-.enemy-info {
-    float : left;
-    width: 100%;
-}
-
-.ally-abilities {
-    width: 70%;
-    float: left;
-}
-
 #pre-battle {
     width : 100%;
 }
@@ -216,6 +184,31 @@ body {
     height : 100%;
 }
 
+
+/* Images Sizes */
+
+
+
+.ally-portrait-small {
+    width : 50px;
+    height : 50px;
+}
+
+.ally-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+.enemy-portrait {
+    width : 100px;
+    height : 100px;
+}
+
+.ally-ability-portrait {
+    width : 100px;
+    height : 100px;
+}
+
 #player-portrait {
     width : 100px;
     height : 100px;
@@ -226,20 +219,61 @@ body {
     height : 100px;
 }
 
+
+/* ALLIES AND ENEMIES */
+
+
 #allies {
     height : 100%;
     width : 70%;
     float : left;
 }
 
-#enemies {
+.ally {
+    width: 100%;
+    float: left;
+}
+
+.ally-info {
+    height: 100%;
+    width: 30%;
+    float: left;
+}
+
+.abilities {
+    width : 70%;
     height : 100%;
-    width : 30%;
+    float : left
+}
+
+.ally-ability {
+    height: 100%;
+    width: 25%;
     float : left;
 }
 
-#footer {
+.ally-abilities {
+    height: 100px;
+    width: 100%;
     float : left;
+}
+
+#enemies {
+    height : 100%;
+    width : 30%;
+    float : right;
+}
+
+.enemy-info {
+    width: 100%;
+}
+
+
+
+
+/* FOOTER */
+
+#footer {
     width : 100%;
     height : 10%;
 }
@@ -250,11 +284,69 @@ body {
 }
 
 #abilityInfo {
-    position : fixed;
-    display : block;
+    float : left;
 }
 
 #chosenAbilities {
     float : left;
 }
 
+#actions {
+    float : left;
+}
+
+
+
+/* COPIED FROM DRAG DROP LIST */
+
+.example-list {
+    width: 92%;
+    max-width: 100%;
+    border: solid 1px #ccc;
+    min-height: 60px;
+    display: flex;
+    flex-direction: row;
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .example-box {
+    padding: 20px 10px;
+    border-right: solid 1px #ccc;
+    color: rgba(0, 0, 0, 0.87);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    cursor: move;
+    background: white;
+    font-size: 14px;
+    flex-grow: 1;
+    flex-basis: 0;
+  }
+  
+  .cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 4px;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  }
+  
+  .cdk-drag-placeholder {
+    opacity: 0;
+  }
+  
+  .cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+  
+  .example-box:last-child {
+    border: none;
+  }
+  
+  .example-list.cdk-drop-list-dragging .example-box:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }

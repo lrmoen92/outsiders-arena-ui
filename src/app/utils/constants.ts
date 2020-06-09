@@ -1,6 +1,6 @@
 export const domainLocal = 'localhost:8817';
-export const domainProd = '66.242.90.163:8171';
-export const domain = domainLocal;
+export const domainProd = '173.27.48.6:8171';
+export const domain = domainProd;
 
 export const URLS = {
     playerArena : 'http://' + domain + '/api/player/arena/',

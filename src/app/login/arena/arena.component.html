@@ -29,38 +29,40 @@
       </div>
 
       <div id="centerPanel">
-        <div id="timer">
-          <countdown [config]="config" (start)="onStart()" (finished)="onFinished()">
 
-          </countdown>
-        </div>
 
         <div id="resources">
+
+          <div id="timer">
+            <countdown [config]="config" (event)="handleTimerEvent($event)">
+  
+            </countdown>
+          </div>
           <div *ngIf="hasTurn" id="energy">
             
             <div id="energy-pool">
               <div class="left-text">ENERGY TOTAL: {{ totalEnergy }}</div>
-              <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy)" class="energy-strength energy"></div>
-              <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy)" class="energy-dexterity energy"></div>
-              <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy)" class="energy-arcana energy"></div>
-              <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy)" class="energy-divinity energy"></div>
+              <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy, false)" class="energy-strength energy"></div>
+              <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy, false)" class="energy-dexterity energy"></div>
+              <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy, false)" class="energy-arcana energy"></div>
+              <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy, false)" class="energy-divinity energy"></div>
             </div>
             
             <br>
 
             <div id="spent">
               <div class="left-text">SPENT TOTAL: {{ totalSpentEnergy }}</div>
-              <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy)" class="energy-strength energy"></div>
-              <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy)" class="energy-dexterity energy"></div>
-              <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy)" class="energy-arcana energy"></div>
-              <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy)" class="energy-divinity energy"></div>
+              <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy, false)" class="energy-strength energy"></div>
+              <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy, false)" class="energy-dexterity energy"></div>
+              <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy, false)" class="energy-arcana energy"></div>
+              <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy, false)" class="energy-divinity energy"></div>
             </div>
 
             <br>
 
 
             <div id="randoms">
-              <div class="left-text"> {{ randomsNeeded }} MORE ENERGY NEEDED</div>
+              <div > {{ randomsNeeded }} MORE ENERGY NEEDED</div>
             </div>
             
           </div>
@@ -68,12 +70,22 @@
           <br>
 
           <div id="actions">
-            <button>
+            <button (click)="clickEnergyTrade()" [disabled]="!hasTurn || abilitiesAreChosen()">
               Trade
             </button>
             <button (click)="sendTurnEnd()" [disabled]="!hasTurn">
               Finish Turn
             </button>
+            <div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="strengthTrade" value="STRENGTH">
+              <div class="energy energy-strength"></div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="dexterityTrade" value="DEXTERITY">
+              <div class="energy energy-dexterity"></div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="arcanaTrade" value="ARCANA">
+              <div class="energy energy-arcana"></div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="divinityTrade" value="DIVINITY">
+              <div class="energy energy-divinity"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -88,42 +100,46 @@
 
       <div id="allies">
 
-        <div class="ally" *ngFor="let ally of allies">
+        <div class="ally">
 
           <div class="ally-info">
-            <img [src]="ally.avatarUrl" class="ally-portrait" (click)="clickTarget(ally.position)">
-            <div>
-              {{ ally.name }}
-            </div>              
-            <div>
-              {{ ally.hp }} / 100 HP
+            <div *ngFor="let ally of battleAllies">
+              <img [src]="allyPortraits.get(ally.characterId)" class="ally-portrait" (click)="clickTarget(ally.position)">        
+              <div>
+                {{ ally.hp }} / 100 HP
+              </div>
             </div>
           </div>
           
-          <div class="ally-abilities">
-            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1)">
-              <img [src]="ally.slot1.abilityUrl" class="ally-ability-portrait">
+          <div class="abilities">
+            <div *ngFor="let ally of allies" class="ally-abilities">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1)">
+                <img [src]="ally.slot1.abilityUrl" class="ally-ability-portrait">
+              </div>
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2)">
+                <img [src]="ally.slot2.abilityUrl" class="ally-ability-portrait">
+              </div>
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3)">
+                <img [src]="ally.slot3.abilityUrl" class="ally-ability-portrait">
+              </div>
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4)">
+                <img [src]="ally.slot4.abilityUrl" class="ally-ability-portrait">
+              </div>
             </div>
-            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2)">
-              <img [src]="ally.slot2.abilityUrl" class="ally-ability-portrait">
-            </div>
-            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3)">
-              <img [src]="ally.slot3.abilityUrl" class="ally-ability-portrait">
-            </div>
-            <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4)">
-              <img [src]="ally.slot4.abilityUrl" class="ally-ability-portrait">
-            </div>
-          </div> 
+          </div>
 
         </div>
 
       </div>
 
       <div id="enemies">
-        <div class="enemy" *ngFor="let enemy of enemies">
+        <div class="enemy" *ngFor="let enemy of battleEnemies">
           <div class="enemy-info">
-            <img [src]="enemy.avatarUrl" (click)="clickTarget(enemy.position)" class="enemy-portrait">
+            <img [src]="enemyPortraits.get(enemy.characterId)" (click)="clickTarget(enemy.position)" class="enemy-portrait">
           </div>
+          <span>
+            {{ enemy.hp }} / 100 HP
+          </span>
         </div>
       </div>
 
@@ -140,10 +156,13 @@
         </div>
 
 
-        <div id="chosenAbilities" class="ally-abilities">
-          <div class="ally-ability" *ngFor="let effect of turnEffects">
-            <img [src]="effect.avatarUrl">
-            {{ effect.name }}
+        <div *ngIf="!isReelEmpty" id="chosenAbilities">
+          <div cdkDropList cdkDropListOrientation="horizontal" class="example-list" (cdkDropListDropped)="drop($event)">
+            <div *ngFor="let effect of turnEffects" class="example-box" cdkDrag>
+              <img [src]="effect.avatarUrl">
+              <span> {{ effect.name }} </span>
+              <button *ngIf="effect.instanceId < 0" (click)="removeAbilityFromReel(effect)"> REMOVE </button> 
+            </div>
           </div>
         </div>
 

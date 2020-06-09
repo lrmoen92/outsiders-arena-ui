@@ -37,7 +37,7 @@ export class AbilityTargetDTO {
 
 export class BattleTurnDTO {
     spentEnergy : Map<string, Number>;
-    effectIds : Array<string>;
+    effects : Array<Effect>;
     abilities : Array<AbilityTargetDTO>;
 }
 
@@ -62,7 +62,7 @@ export class Effect {
     duration : Number;
     avatarUrl : string;
       // used to identify an effect within the context of a battle (backend assigned)
-    instanceId : string;
+    instanceId : Number;
     name : string;
     condition : string;
     quality : string;

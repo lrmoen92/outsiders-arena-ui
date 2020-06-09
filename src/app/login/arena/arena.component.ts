@@ -2,7 +2,11 @@ import { Component, Input, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect} from 'src/app/model/api-models';
 import { URLS } from 'src/app/utils/constants';
-import { CountdownComponent, Config } from 'ngx-countdown';
+import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import { timer } from 'rxjs';
+import { FormControl } from '@angular/forms';
+
 @Component({
   selector: 'arena-root',
   templateUrl: './arena.component.html',
@@ -17,12 +21,14 @@ export class ArenaComponent {
 	httpClient : HttpClient;
 	webSocket : WebSocket = null;
 
+	@ViewChild(CountdownComponent) private countdown: CountdownComponent;
+	config: CountdownConfig;
+
 	@Input()
 	allCharacters : Array<Character>;
 
 	@Input()
 	player : Player;
-	isPlayerOne : Boolean;
 
 	//ngmodel from input
 	opponentName : string;
@@ -34,16 +40,19 @@ export class ArenaComponent {
 	inBattle : Boolean = false;
 	connected : Boolean = false;
 	hasTurn : Boolean = false;
+	isPlayerOne : Boolean = false;
 
 	allies : Array<Character> = [];
 	enemies : Array<Character> = [];
+
+	allyPortraits : Map<Number, String> = new Map;
+	enemyPortraits : Map<Number, String> = new Map;
 
 	battleAllies : Array<CharacterInstance> = [];
 	battleEnemies : Array<CharacterInstance> = [];
 
 	// NGMODELS VVV
 	turnEnergy : Map<string, Number> = new Map();
-	totalEnergy : number = 0;
 	turnStrength : Array<string>;
 	turnDexterity : Array<string>;
 	turnArcana : Array<string>;
@@ -51,28 +60,36 @@ export class ArenaComponent {
 
 	// NGMODELS VVV
 	spentEnergy : Map<string, Number> = new Map();
-	totalSpentEnergy : number = 0;
 	spentStrength : Array<string>;
 	spentDexterity : Array<string>;
 	spentArcana : Array<string>;
 	spentDivinity : Array<string>;
 
+	randomCap = 0;
+	lockedStr = 0;
+	lockedDex = 0;
+	lockedArc = 0;
+	lockedDiv = 0;
+
+	energyTrade : string;
+	randomsAreNeeded : boolean = false;
+
+	totalEnergy : number = 0;
+	totalSpentEnergy : number = 0;
 	randomsNeeded : number = 0;
 
 
 	// NGMODELS VVV
-	// In battle variables VVVV
-
-	@ViewChild(CountdownComponent) private countdown: CountdownComponent;
-	private config: Config;
+	// In battle variables VVV
 
 	hoveredAbility : Ability = null;
-	chosenAbilities : Array<AbilityTargetDTO> = [];
-	turnEffects : Array<Effect> = [];
 
+
+	chosenAbilities : Array<AbilityTargetDTO> = [];
 
 	// V identified by effectID, or [ABILITY1, 2, 3]
-	turnEffectOrder : Array<string> = [];
+	turnEffects : Array<Effect> = [];
+	isReelEmpty : boolean = true;
 
 
 	chosenAbility: Ability;
@@ -187,23 +204,37 @@ export class ArenaComponent {
 	// ------ TIMER --------------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-	countdownConfigFactory(): Config {
-		return { 
-			template: `Timer: $!s! Seconds`,
+	countdownConfigFactory(): CountdownConfig {
+		return {
+			prettyText: (s => {return "TIMER: " + s + " SECONDS LEFT"}),
+			format: `s`,
 			leftTime: 40
 		};
+	}
+
+	handleTimerEvent(event: CountdownEvent) {
+		console.log(event);
+		if(event.action === "start" || event.action == "restart") {
+			this.onStart();
+		} else if (event.action === "done") {
+			this.onStop();
+		}
 	}
 
 	onStart() {
 		// play starting sound effect
 	}
 
-	onFinished() {
+	onStop() {
 		// play warning sound effect
 		// add 2 second grace period here
 
 		// force turn end and clean up
 		if (this.hasTurn) {
+			if (this.randomsNeeded > 0) {
+				// put all shit back and empty abilities array
+			}
+
 			this.sendTurnEndMessage();
 		}
 		// play ending sound effect
@@ -281,7 +312,27 @@ export class ArenaComponent {
 		}
 	}
 
-	spendEnergy(energy : string) {
+	spendEnergy(energy : string, force : boolean) {
+
+		if(energy === "RANDOM") {
+			// same here I think, not trying to spend a random into the map above :O
+		} else {
+
+			if(this.abilitiesAreChosen() && this.randomsNeeded === 0 && !force) {
+				alert("You don't need to spend more!");
+			} else if (this.randomsAreNeeded && !force) {
+				this.randomsNeeded--;
+				if (this.randomsNeeded === 0) {
+					this.randomsAreNeeded = false;
+				}
+				this.spendCopy(energy);
+			} else {
+				this.spendCopy(energy);
+			} 
+		}
+	}
+
+	spendCopy(energy: string) {
 		let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
 
 		let oldVal = temp[energy]
@@ -296,20 +347,167 @@ export class ArenaComponent {
 		this.setSpentEnergy(temp2);
 	}
 
-	returnEnergy(energy : string) {
-		let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
-
-		let oldVal = temp[energy]
-		temp[energy] = oldVal + 1;
+	returnEnergy(energy : string, force : boolean) {
 		
-		let temp2 : Map<string, Number> = this.copyMap(this.spentEnergy);
+		if(energy === "RANDOM") {
+			// only for refunding abilities I guess
+			// this.removeNonLockedEnergy();
+		} else {
 
-		let oldVal2 = temp2[energy]
-		temp2[energy] = oldVal2 - 1;
+			if (!force) {
+				this.calculateLockedEnergy();
+			}
 
-		this.setTurnEnergy(temp);
-		this.setSpentEnergy(temp2);
+			if (energy === "STRENGTH" && this.spentStrength.length === this.lockedStr && !force) {
+				alert("You can't remove that energy, remove the ability you spent it on first!");
+			} else if (energy === "DEXTERITY" && this.spentDexterity.length === this.lockedDex && !force) {
+				alert("You can't remove that energy, remove the ability you spent it on first!");
+			} else if (energy === "ARCANA" && this.spentArcana.length === this.lockedArc && !force) {
+				alert("You can't remove that energy, remove the ability you spent it on first!");
+			} else if (energy === "DIVINITY" && this.spentDivinity.length === this.lockedDiv && !force) {
+				alert("You can't remove that energy, remove the ability you spent it on first!");
+			} else {
+				if (!force) {
+					console.log(this.randomCap);
+					if (this.randomsNeeded < this.randomCap) {
+						this.randomsNeeded++;
+					} else if (this.randomsNeeded === 0 || this.randomCap === 0) {
+						// this is normal, do nothing
+					} else {
+						// we dont need anymore randoms, just give it back as normal?
+					}
+				}
+	
+	
+				let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
+	
+				let oldVal = temp[energy]
+				temp[energy] = oldVal + 1;
+				
+				let temp2 : Map<string, Number> = this.copyMap(this.spentEnergy);
+	
+				let oldVal2 = temp2[energy]
+				temp2[energy] = oldVal2 - 1;
+	
+				this.setTurnEnergy(temp);
+				this.setSpentEnergy(temp2);
+			}
+		}
 	}
+
+	abilitiesAreChosen() {
+		return this.chosenAbilities.length > 0;
+	}
+	
+	calculateLockedEnergy() {
+		this.randomCap = 0;
+		this.lockedStr = 0;
+		this.lockedDex = 0;
+		this.lockedArc = 0;
+		this.lockedDiv = 0;
+		if(this.abilitiesAreChosen()) {
+			for (let dto of this.chosenAbilities) {
+				for (let str of dto.ability.cost) {
+					if (str === "RANDOM") {
+						this.randomCap++;
+					} else if (str === "STRENGTH") {
+						this.lockedStr++;
+					} else if (str === "DEXTERITY") {
+						this.lockedDex++
+					} else if (str === "ARCANA") {
+						this.lockedArc++
+					} else if (str === "DIVINITY") {
+						this.lockedDiv++
+					}
+				}
+			}
+		}
+	}
+
+	removeNonLockedEnergy() {
+
+		if (this.spentEnergy["STRENGTH"] > this.lockedStr) {
+			this.returnEnergy("STRENGTH", true);
+		} else if (this.spentEnergy["DEXTERITY"] > this.lockedDex) {
+			this.returnEnergy("DEXTERITY", true);
+		} else if (this.spentEnergy["ARCANA"] > this.lockedArc) {
+			this.returnEnergy("ARCANA", true);
+		} else  if (this.spentEnergy["DIVINITY"] > this.lockedDiv) {
+			this.returnEnergy("DIVINITY", true);
+		} else {
+			alert("this should never happen");
+		}
+	}
+
+	
+	payCostTemporary(ability) {
+		let costs = ability.cost;
+		for (let s of costs) {
+			console.log("energy spent: " + s);
+			if (s !== "RANDOM") {
+				this.spendEnergy(s, true);
+			} else {
+				this.randomsNeeded++;
+				this.randomsAreNeeded = true;
+				// this.totalEnergy--;
+			}
+		}
+	}
+
+	refundCostTemporary(ability) {
+		let costs = ability.cost;
+		this.calculateLockedEnergy();
+		let randomsToRefund = this.randomCap - this.randomsNeeded;
+		for (let s of costs) {
+			console.log("energy refunded: " + s)
+			if (s !== "RANDOM") {
+				this.returnEnergy(s, true);
+				
+				if (s === "STRENGTH") {
+					this.lockedStr--;
+				} else if (s === "DEXTERITY") {
+					this.lockedDex--;
+				} else if (s === "ARCANA") {
+					this.lockedArc--;
+				} else  if (s === "DIVINITY") {
+					this.lockedDiv--;
+				} else {
+					alert("this should never happen2");
+				}
+
+			} else {
+				if (randomsToRefund > 0) {
+					// correct spent by checking for the closest non-locked energy
+					this.removeNonLockedEnergy();
+					randomsToRefund--;
+				}
+				if(this.randomsAreNeeded){
+					this.randomsNeeded--;
+				}
+
+				if (this.randomsNeeded === 0) {
+					this.randomsAreNeeded = false;
+				}
+			}
+		}
+	}
+
+	clickEnergyTrade() {
+		if (!this.energyTrade) {
+			alert("Pick an energy to trade for.");
+		} else if (this.totalSpentEnergy !== 5) {
+			alert("You must spend 5 energy, to trade for 1");
+		} else {
+			this.sendEnergyTrade(this.spentEnergy, this.energyTrade);
+		}
+	}
+
+	refreshTradeState() {
+		this.randomsNeeded = 0;
+		this.randomsAreNeeded = false;
+		this.energyTrade = null;
+	}
+
 
 	// ======================================================================================================================
 	// ------ ABILITIES/TARGETS ---------------------------------------------------------------------------------------------
@@ -318,19 +516,19 @@ export class ArenaComponent {
 	clickAbility(ability) {
 		if (this.abilityCurrentlyClicked) {
 			// can't click abilities twice
+		} if(this.totalSpentEnergy > 0 && !this.abilitiesAreChosen()) {
+			alert("Finish your energy trade or put your spent energy back before choosing abilities!")
 		} else {
 			// set ability as variable
 			this.chosenAbility = ability;
 
 			// TODO: 
-			// show this somewhere on ui
-
+			// show this somewhere on ui (we kinda do now, it locks)
 			// set variable for hiding
 			this.abilityCurrentlyClicked = true;
 
 			// TODO: 
 			// call for and show available targets
-
 			// currently just setting to all :///
 			this.availableTargets = [0, 1, 2, 3, 4, 5];
 		}
@@ -354,7 +552,7 @@ export class ArenaComponent {
 			}
 			dto.targets = targetLocation;
 
-			// add DTO for backend call
+			// add DTO for backend call, gets sent at the end!!! (got it)
 			this.chosenAbilities.push(dto);
 
 			// add ability to UI
@@ -362,13 +560,23 @@ export class ArenaComponent {
 			this.clearSelection();
 
 			// update Energy and call cost check again
-			this.sendCostCheck();
+			// be sure to add randoms needed to spent total to get true energy total for cost check
+			// this.sendCostCheck();
 			// update random count needed to finish turn
+		} else {
+			// TODO:
+			// clicking targets should show character blurb normally (duh)
 		}
 	}
 
 	clickCancel() {
-		this.clearSelection();
+		if (this.abilityCurrentlyClicked) {
+			this.clearSelection();
+		} else {
+			if (this.chosenAbilities.length > 0) {
+
+			}
+		}
 	}
 
 	clearSelection() {
@@ -392,13 +600,40 @@ export class ArenaComponent {
 	// secondary array (holding turn ability order separately)
 
 	addAbilityToReel(ability) {
-		this.turnEffectOrder.push(ability.name);
+		this.payCostTemporary(ability);
 		let tempEffect = new Effect();
-		tempEffect.instanceId = "ABILITY";
+		tempEffect.instanceId = -1;
 		tempEffect.avatarUrl = ability.abilityUrl;
 		tempEffect.name = ability.name;
 		this.turnEffects.push(tempEffect);
+		if(this.isReelEmpty) {
+			this.isReelEmpty = false;
+		}
 	}
+
+	removeAbilityFromReel(effect : Effect) {
+		// gotta reverse engineer the ability
+		if (effect.instanceId > 0) {
+			// can't remove pre-existing conditions breh
+		} else {
+			var index = this.chosenAbilities.findIndex(a => a.ability.name==effect.name);
+			let ability = this.chosenAbilities[index].ability;
+			var index2 = this.turnEffects.findIndex(e => (e.instanceId < 0 && e.name === effect.name));
+
+			this.refundCostTemporary(ability);
+
+			this.chosenAbilities.splice(index, 1);
+			this.turnEffects.splice(index2, 1);
+		}
+		if (this.turnEffects.length === 0) {
+			this.isReelEmpty = true;
+		}
+	}
+
+	drop(event: CdkDragDrop<string[]>) {
+		moveItemInArray(this.turnEffects, event.previousIndex, event.currentIndex);
+	}
+
 
 	showAbilityInfo(ability) {
 		if (this.abilityCurrentlyClicked) {
@@ -421,6 +656,7 @@ export class ArenaComponent {
 			JSON.stringify({
 				type: "COST_CHECK",
 				playerId: this.player.id,
+				energyTotal: this.randomsNeeded + this.totalSpentEnergy,
 				ability: this.chosenAbility
 			})
 		)
@@ -438,13 +674,13 @@ export class ArenaComponent {
 		)
 	}
 
-	sendEnergyTrade(map, type){
+	sendEnergyTrade(energySpent : Map<String, Number>, energyGained : string){
 		this.webSocket.send(
 			JSON.stringify({
 				type: "ENERGY_TRADE",
 				playerId: this.player.id,
-				spent: map,
-				chosen: type
+				spent: energySpent,
+				chosen: energyGained
 			})
 		)
 	}
@@ -463,14 +699,14 @@ export class ArenaComponent {
 
 		let spentEnergy : Map<string, Number> = this.spentEnergy;
 		let abilityDTOs : Array<AbilityTargetDTO> = this.chosenAbilities;
-		let effectIds : Array<string> = this.turnEffectOrder;
+		let effects : Array<Effect> = this.turnEffects;
 
 		// BUILD DTO HERE
 
 		let battleTurnDTO : BattleTurnDTO = {
 			spentEnergy : spentEnergy,
 			abilities : abilityDTOs,
-			effectIds : effectIds
+			effects : effects
 		}
 		console.log(battleTurnDTO);
 		const payload = {
@@ -482,8 +718,6 @@ export class ArenaComponent {
 			JSON.stringify(payload)
 		);
 
-
-
 		this.cleanUpPhase();
 		// CLEAN UP everything
 	}
@@ -494,9 +728,10 @@ export class ArenaComponent {
 		this.hoveredAbility = null;
 		this.chosenAbilities = [];
 		this.turnEffects = [];
-		this.turnEffectOrder = [];
 		this.availableTargets = [];
 		this.randomsNeeded = 0;
+		this.randomsAreNeeded = false;
+		this.isReelEmpty = true;
 	}
 
 
@@ -543,6 +778,7 @@ export class ArenaComponent {
 
 			this.battleAllies = this.battle.playerOneTeam;
 			this.battleEnemies = this.battle.playerTwoTeam;
+
 			this.setTurnEnergy(this.battle.playerOneEnergy);
 			this.setSpentEnergy(this.newMap());
 			
@@ -567,19 +803,33 @@ export class ArenaComponent {
 				this.hasTurn = true;
 			}
 		}
+
+		for (let c of this.allies) {
+			this.allyPortraits.set(c.id, c.avatarUrl);
+		}
+		for (let c of this.enemies) {
+			this.enemyPortraits.set(c.id, c.avatarUrl);
+		}
 	}
 
 	handleEnergyTradeResponse(msg) {
 		// TODO
-		console.log(msg);
+		console.log("GOT ENERGY TRADE RESPONSE");
+		let battle = msg.battle;
+		if (this.isPlayerOne) {
+			this.setTurnEnergy(battle.playerOneEnergy);
+		} else {
+			this.setTurnEnergy(battle.playerTwoEnergy);
+		}
+		this.setSpentEnergy(this.newMap());
+		this.energyTrade = null;
+		// do another cost check 
+		// this.sendCostCheck();
 	}
   
 	handleCostCheckResponse(msg) {
-		console.log("GOT COST CHECK MESSAGE");
+		console.log("GOT COST CHECK RESPONSE");
 		console.log(msg);
-		// handle all updating of assigning energy update, auto move spent energy,
-		// and calculate spent and needed randoms
-
 
 		// array of numbers to enable, and -1's to ignore
 		// number of randoms needed after this move
@@ -588,7 +838,7 @@ export class ArenaComponent {
 	}
 
 	handleTargetCheckResponse(msg) {
-		console.log("GOT TARGET CHECK MESSAGE");
+		console.log("GOT TARGET CHECK RESPONSE");
 		let battle = msg.battle;
 		//TODO
 		// recieve message from backend, and highlight appropriate available targets
@@ -608,13 +858,18 @@ export class ArenaComponent {
 		if (this.battle.playerIdOne === this.player.id) {
 			this.setTurnEnergy(this.battle.playerOneEnergy);
 			this.setSpentEnergy(this.newMap());
+			this.refreshTradeState();
 		} else {
 			this.setTurnEnergy(this.battle.playerTwoEnergy);
 			this.setSpentEnergy(this.newMap());
+			this.refreshTradeState();
 		}
 
+		// TODO:
+		// handle populating the turnEffectsMap (and appropriate boolean, isReelEmpty)
+
 		// Cost check
-		this.sendCostCheck();
+		// this.sendCostCheck();
 
 		// check and perform damage (might happen automatically with battle? idk)
 
