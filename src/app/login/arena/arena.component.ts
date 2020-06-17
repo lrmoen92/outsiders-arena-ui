@@ -1,10 +1,10 @@
 import { Component, Input, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect} from 'src/app/model/api-models';
+import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect, CostCheckDTO} from 'src/app/model/api-models';
 import { URLS } from 'src/app/utils/constants';
 import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import { timer } from 'rxjs';
+import { timer, VirtualTimeScheduler } from 'rxjs';
 import { FormControl } from '@angular/forms';
 
 @Component({
@@ -82,17 +82,24 @@ export class ArenaComponent {
 	// NGMODELS VVV
 	// In battle variables VVV
 
+	activeCharacterPosition : Number = -1;
 	hoveredAbility : Ability = null;
 
-
+	alliedAbilities : Array<Ability> = [];
+	availableAbilities : Array<Number> = [];
 	chosenAbilities : Array<AbilityTargetDTO> = [];
 
-	// V identified by effectID, or [ABILITY1, 2, 3]
+	lockedAbilities : Array<Number> = [];
+
+	// V identified by effectID, or -1
 	turnEffects : Array<Effect> = [];
 	isReelEmpty : boolean = true;
 
+	aoeTurnEffects : Map<Number, Array<Effect>> = new Map();
+
 
 	chosenAbility: Ability;
+	chosenAbilityPosition : number;
 	availableTargets: Array<Number> = [];
 	abilityCurrentlyClicked: boolean;
 
@@ -179,25 +186,9 @@ export class ArenaComponent {
 			this.handleMessage();
 			this.sendMatchMakingMessage();
 		}
-	}
-
-	// (this is a send message but it made more sense to put it above)
-	sendMatchMakingMessage() {
-		console.log("PlayerID: " + this.player.id);
-		this.allies.forEach(a => {
-			console.log("Chars: " + a.name);
-		})
-		console.log("ArenaID: " + this.arenaId);
-		let msg = {
-			type: "MATCH_MAKING",
-			char1: this.allies[0].id,
-			char2: this.allies[1].id,
-			char3: this.allies[2].id,
-			playerId: this.player.id,
-			arenaId: this.arenaId,
-			opponentName: this.opponentName 
-		};
-		this.webSocket.send(JSON.stringify(msg));
+		this.webSocket.onerror = (e) => {
+			console.log(e);
+		}
 	}
 
 	// ======================================================================================================================
@@ -208,7 +199,7 @@ export class ArenaComponent {
 		return {
 			prettyText: (s => {return "TIMER: " + s + " SECONDS LEFT"}),
 			format: `s`,
-			leftTime: 40
+			leftTime: 60
 		};
 	}
 
@@ -232,6 +223,8 @@ export class ArenaComponent {
 		// force turn end and clean up
 		if (this.hasTurn) {
 			if (this.randomsNeeded > 0) {
+
+				// TODO: this cleanup needs to be PERFECT!
 				// put all shit back and empty abilities array
 			}
 
@@ -371,7 +364,9 @@ export class ArenaComponent {
 					console.log(this.randomCap);
 					if (this.randomsNeeded < this.randomCap) {
 						this.randomsNeeded++;
+						this.randomsAreNeeded = true;
 					} else if (this.randomsNeeded === 0 || this.randomCap === 0) {
+						this.randomsAreNeeded = false;
 						// this is normal, do nothing
 					} else {
 						// we dont need anymore randoms, just give it back as normal?
@@ -443,7 +438,6 @@ export class ArenaComponent {
 	payCostTemporary(ability) {
 		let costs = ability.cost;
 		for (let s of costs) {
-			console.log("energy spent: " + s);
 			if (s !== "RANDOM") {
 				this.spendEnergy(s, true);
 			} else {
@@ -459,7 +453,6 @@ export class ArenaComponent {
 		this.calculateLockedEnergy();
 		let randomsToRefund = this.randomCap - this.randomsNeeded;
 		for (let s of costs) {
-			console.log("energy refunded: " + s)
 			if (s !== "RANDOM") {
 				this.returnEnergy(s, true);
 				
@@ -513,44 +506,117 @@ export class ArenaComponent {
 	// ------ ABILITIES/TARGETS ---------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-	clickAbility(ability) {
+	clickAbility(ability, parentPosition, abilityPosition) {
 		if (this.abilityCurrentlyClicked) {
 			// can't click abilities twice
-		} if(this.totalSpentEnergy > 0 && !this.abilitiesAreChosen()) {
+			
+		} else if (this.isAbilityLocationLocked(abilityPosition)) {
+			alert("Can't use that now!")
+		} else if(this.totalSpentEnergy > 0 && !this.abilitiesAreChosen()) {
 			alert("Finish your energy trade or put your spent energy back before choosing abilities!")
 		} else {
 			// set ability as variable
 			this.chosenAbility = ability;
+			this.chosenAbilityPosition = abilityPosition;
 
 			// TODO: 
 			// show this somewhere on ui (we kinda do now, it locks)
 			// set variable for hiding
 			this.abilityCurrentlyClicked = true;
+			this.activeCharacterPosition = parentPosition;
+
+			let dto = new AbilityTargetDTO;
+			dto.ability = ability;
+			dto.abilityPosition = abilityPosition;
+			let p2pos = this.isPlayerOne ? parentPosition : parentPosition + 3;
+			dto.characterPosition = p2pos;
+			dto.targetPositions = [];
 
 			// TODO: 
 			// call for and show available targets
 			// currently just setting to all :///
-			this.availableTargets = [0, 1, 2, 3, 4, 5];
+			this.sendTargetCheck(dto);
 		}
 	}
 
+	isAbilityLocationLocked(abilityLocation) : boolean  {
+		if (this.availableAbilities[abilityLocation] === -1){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	isTargetLocationLocked(charPos) : boolean  {
+		if (this.availableTargets.length > 0) {
+			if (this.availableTargets[charPos] === -1){
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+
+	}
+
+	disableAbilities() {
+		this.availableAbilities = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+	}
+
+	getImageStyle(abilityLocation) {
+		if (this.availableAbilities) {
+			if (this.isAbilityLocationLocked(abilityLocation)) {
+				return {'opacity': 0.2};
+			} else {
+				return {'opacity': 1};
+			}
+		}
+	}
+
+	getImageStyleCharacter(characterPosition) {
+		if (this.availableTargets) {
+			if (this.isTargetLocationLocked(characterPosition)) {
+				return {'opacity': 0.2};
+			} else {
+				return {'opacity': 1};
+			}
+		}
+	}
+
+
 	clickTarget(targetLocation) {
-		if (this.chosenAbility) {
+		if (this.isTargetLocationLocked(targetLocation)) {
+			alert("That character can't be targeted with this ability!");
+		} else if (this.chosenAbility) {
 			// form and add AbiltyTargetDTOS to array
 			let dto = new AbilityTargetDTO;
 			dto.ability = this.chosenAbility;
-			
+			let tarArray = [];
 			// check chosen ability if it's AOE, or take target enemy
 			if (this.chosenAbility.aoe) {
 				if (targetLocation > 2) {
-					targetLocation = [3, 4, 5]
+					tarArray = [3, 4, 5]
+					for (let x of tarArray) {
+						if(this.isTargetLocationLocked(x)) {
+							tarArray.splice(tarArray.indexOf(x), 1);
+						}
+					}
 				} else {
-					targetLocation = [0, 1, 2]
+					tarArray = [0, 1, 2];
+					for (let x of tarArray) {
+						if(this.isTargetLocationLocked(x)) {
+							tarArray.splice(tarArray.indexOf(x), 1);
+						}
+					}
 				}
 			} else {
-				targetLocation = [targetLocation];
+				tarArray.push(targetLocation);
 			}
-			dto.targets = targetLocation;
+			console.log("TARGET LOCATION CLICKED: " + tarArray);
+			dto.targetPositions = tarArray;
+			dto.characterPosition = this.activeCharacterPosition;
+			dto.abilityPosition = this.chosenAbilityPosition;
 
 			// add DTO for backend call, gets sent at the end!!! (got it)
 			this.chosenAbilities.push(dto);
@@ -561,7 +627,7 @@ export class ArenaComponent {
 
 			// update Energy and call cost check again
 			// be sure to add randoms needed to spent total to get true energy total for cost check
-			// this.sendCostCheck();
+			this.sendCostCheck();
 			// update random count needed to finish turn
 		} else {
 			// TODO:
@@ -581,6 +647,8 @@ export class ArenaComponent {
 
 	clearSelection() {
 		this.abilityCurrentlyClicked = false;
+		this.activeCharacterPosition = -1;
+		this.availableTargets = [];
 		this.hideAbilityPanel();
 	}
 
@@ -609,6 +677,7 @@ export class ArenaComponent {
 		if(this.isReelEmpty) {
 			this.isReelEmpty = false;
 		}
+		this.activeCharacterPosition = -1;
 	}
 
 	removeAbilityFromReel(effect : Effect) {
@@ -628,6 +697,8 @@ export class ArenaComponent {
 		if (this.turnEffects.length === 0) {
 			this.isReelEmpty = true;
 		}
+		
+		this.sendCostCheck();
 	}
 
 	drop(event: CdkDragDrop<string[]>) {
@@ -640,7 +711,6 @@ export class ArenaComponent {
 			// dont mess with info already there
 		} else {
 			this.hoveredAbility = ability;
-			console.log(this.hoveredAbility);
 		}
 	}
 
@@ -648,28 +718,54 @@ export class ArenaComponent {
 	// ------ SEND MESSAGES -------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
+	// WTF LOGAN 
+	sendMatchMakingMessage() {
+		let msg = {
+			type: "MATCH_MAKING",
+			char1: this.allies[0].id,
+			char2: this.allies[1].id,
+			char3: this.allies[2].id,
+			playerId: this.player.id,
+			arenaId: this.arenaId,
+			opponentName: this.opponentName 
+		};
+		this.webSocket.send(JSON.stringify(msg));
+	}
+
+	allyAbilitiesCosts() : Array<Array<String>> {
+		return this.alliedAbilities.map(x => {
+			return x.cost;
+		})
+	}
+
 	// TODO
 	// gotta do this any time they assign one target/ability too!
 	// send ability id 
 	sendCostCheck() {
-		this.webSocket.send(
-			JSON.stringify({
-				type: "COST_CHECK",
-				playerId: this.player.id,
-				energyTotal: this.randomsNeeded + this.totalSpentEnergy,
-				ability: this.chosenAbility
-			})
-		)
+		console.log("sending cost check");
+
+		let costCheckDTO = {
+			allyCosts : this.allyAbilitiesCosts(),
+			chosenAbilities : this.chosenAbilities
+		}
+
+		const payload = {
+			type: "COST_CHECK",
+			playerId: this.player.id,
+			costCheckDTO: costCheckDTO
+		};
+		
+		this.webSocket.send(JSON.stringify(payload));
 	}
 
 	// TODO
 	// just gotta do this when they click an active ability
-	sendTargetCheck(abilityPosition){
+	sendTargetCheck(dto : AbilityTargetDTO){
 		this.webSocket.send(
 			JSON.stringify({
 				type: "TARGET_CHECK",
 				playerId: this.player.id,
-				ability: abilityPosition
+				abilityTargetDTO: dto
 			})
 		)
 	}
@@ -701,12 +797,49 @@ export class ArenaComponent {
 		let abilityDTOs : Array<AbilityTargetDTO> = this.chosenAbilities;
 		let effects : Array<Effect> = this.turnEffects;
 
+		let finalEffects : Array<Effect> = [];
+
+		console.log("TURN EFFECTS");
+		console.log(this.turnEffects);
+		console.log("AOE EFFECTS");
+		console.log(this.aoeTurnEffects);
+		for (let i = 0; i < effects.length; i++) {
+			let efct = effects[i];
+			let existingEffect = this.aoeTurnEffects.get(efct.instanceId);
+			let isAoe = false;
+
+			if (existingEffect) {
+				// parse and add back all existing effects, and check for ghost AOE effects floating
+				for (let aoeEffect of existingEffect) {
+
+					finalEffects.push(aoeEffect);
+					// if (name === aoeEffect.name && !isAoe) {
+					// 	isAoe = true;
+					// } else if (name === aoeEffect.name && isAoe){
+					// 	console.log(aoeEffect);
+					// 	finalEffects.push(aoeEffect);
+					// }else {
+					// 	// god I hope i don't have to come back here
+					// 	// basically only push one single-target effect, the backend handles the rest
+					// 	// aoes need to push all three tho
+					// }
+				}
+			} else {
+				// this should always be a mock
+				console.log(efct);
+				finalEffects.push(efct);
+			}
+		}
+
+		console.log("Final EFFECTS");
+		console.log(finalEffects);
+
 		// BUILD DTO HERE
 
 		let battleTurnDTO : BattleTurnDTO = {
 			spentEnergy : spentEnergy,
 			abilities : abilityDTOs,
-			effects : effects
+			effects : finalEffects
 		}
 		console.log(battleTurnDTO);
 		const payload = {
@@ -717,21 +850,20 @@ export class ArenaComponent {
 		this.webSocket.send(
 			JSON.stringify(payload)
 		);
-
-		this.cleanUpPhase();
 		// CLEAN UP everything
 	}
 
 	cleanUpPhase() {
+		this.isReelEmpty = true;
 		this.abilityCurrentlyClicked = false;
 		this.chosenAbility = null;
 		this.hoveredAbility = null;
 		this.chosenAbilities = [];
 		this.turnEffects = [];
+		this.aoeTurnEffects = new Map();
 		this.availableTargets = [];
 		this.randomsNeeded = 0;
 		this.randomsAreNeeded = false;
-		this.isReelEmpty = true;
 	}
 
 
@@ -804,12 +936,24 @@ export class ArenaComponent {
 			}
 		}
 
+
 		for (let c of this.allies) {
 			this.allyPortraits.set(c.id, c.avatarUrl);
+			this.alliedAbilities.push(c.slot1);
+			this.alliedAbilities.push(c.slot2);
+			this.alliedAbilities.push(c.slot3);
+			this.alliedAbilities.push(c.slot4);
 		}
 		for (let c of this.enemies) {
 			this.enemyPortraits.set(c.id, c.avatarUrl);
 		}
+
+		if (this.hasTurn) {
+			this.sendCostCheck();
+		} else {
+			this.disableAbilities();
+		}
+
 	}
 
 	handleEnergyTradeResponse(msg) {
@@ -824,12 +968,12 @@ export class ArenaComponent {
 		this.setSpentEnergy(this.newMap());
 		this.energyTrade = null;
 		// do another cost check 
-		// this.sendCostCheck();
+		this.sendCostCheck();
 	}
   
 	handleCostCheckResponse(msg) {
 		console.log("GOT COST CHECK RESPONSE");
-		console.log(msg);
+		this.availableAbilities = msg.usable;
 
 		// array of numbers to enable, and -1's to ignore
 		// number of randoms needed after this move
@@ -839,7 +983,7 @@ export class ArenaComponent {
 
 	handleTargetCheckResponse(msg) {
 		console.log("GOT TARGET CHECK RESPONSE");
-		let battle = msg.battle;
+		this.availableTargets = msg.dto.targetPositions;
 		//TODO
 		// recieve message from backend, and highlight appropriate available targets
 	}
@@ -848,6 +992,7 @@ export class ArenaComponent {
 	handleTurnEndResponse(msg) {
 		if (msg.playerId === this.player.id) {
 			console.log("You ended your turn");
+			this.cleanUpPhase();
 		} else {
 			console.log("They ended their turn");
 		}
@@ -855,21 +1000,56 @@ export class ArenaComponent {
 		this.hasTurn = !this.hasTurn;
 		this.battle = msg.battle;
 
-		if (this.battle.playerIdOne === this.player.id) {
+
+		if (this.isPlayerOne) {
 			this.setTurnEnergy(this.battle.playerOneEnergy);
 			this.setSpentEnergy(this.newMap());
 			this.refreshTradeState();
+
+			this.battleAllies = this.battle.playerOneTeam;
+			this.battleEnemies = this.battle.playerTwoTeam;
+
 		} else {
 			this.setTurnEnergy(this.battle.playerTwoEnergy);
 			this.setSpentEnergy(this.newMap());
 			this.refreshTradeState();
+
+			this.battleAllies = this.battle.playerTwoTeam;
+			this.battleEnemies = this.battle.playerOneTeam;
 		}
 
-		// TODO:
-		// handle populating the turnEffectsMap (and appropriate boolean, isReelEmpty)
+		console.log(this.battleAllies);
+		console.log(this.battleEnemies);
+
+		
+		let defeat = true;
+		for(let instance of this.battleAllies) {
+			if (!instance.dead) {
+				defeat = false;
+			}
+		}
+		
+		let victory = true;
+		for(let instance of this.battleEnemies) {
+			if (!instance.dead) {
+				victory = false;
+			}
+		}
+		if(defeat) {
+			alert("YOU HAVE LOST");
+		}
+		if(victory) {
+			alert("YOU HAVE WON");
+		}
+
 
 		// Cost check
-		// this.sendCostCheck();
+		if (this.hasTurn) {
+			this.checkForAoes();
+			this.sendCostCheck();
+		} else {
+			this.disableAbilities();
+		}
 
 		// check and perform damage (might happen automatically with battle? idk)
 
@@ -877,6 +1057,56 @@ export class ArenaComponent {
 
 		// kill characters (this is the only one I'm sure I have to do, ALSO SOUND EFFECT)
 		this.countdown.restart();
+	}
+
+	checkForAoes() {
+		// gotta populate a map of <instanceID, effect> so we dont show AOE more than once on turnEffects // TODO:
+		for(let ally of this.battleAllies) {
+			if(ally.effects.length > 0) {
+				for(let effect of ally.effects) {
+					if((effect.originCharacter > 2 && !this.isPlayerOne) || (effect.originCharacter < 3 && this.isPlayerOne)) {
+						if (this.aoeTurnEffects.get(effect.instanceId) != null) {
+							let old = this.aoeTurnEffects.get(effect.instanceId);
+							old.push(effect);
+							this.aoeTurnEffects.set(effect.instanceId, old);
+						} else {
+							let effects = [];
+							effects.push(effect);
+							this.aoeTurnEffects.set(effect.instanceId, effects);
+						}
+					}
+				}
+			}
+		}
+
+		for(let enemy of this.battleEnemies) {
+			if(enemy.effects.length > 0) {
+				for(let effect of enemy.effects) {
+					if((effect.originCharacter > 2 && !this.isPlayerOne) || (effect.originCharacter < 3 && this.isPlayerOne)) {
+						if (this.aoeTurnEffects.get(effect.instanceId) != null) {
+							let old = this.aoeTurnEffects.get(effect.instanceId);
+							old.push(effect);
+							this.aoeTurnEffects.set(effect.instanceId, old);
+						} else {
+							let effects = [];
+							effects.push(effect);
+							this.aoeTurnEffects.set(effect.instanceId, effects);
+						}
+					}
+				}
+			}
+		}
+
+		console.log(this.aoeTurnEffects);
+		this.aoeTurnEffects.forEach((v) => {
+			console.log(v);
+			let effect = v[0];
+			this.turnEffects.push(effect);
+			if (this.isReelEmpty) {
+				this.isReelEmpty = false;
+			}
+		});
+		
 	}
 
 }

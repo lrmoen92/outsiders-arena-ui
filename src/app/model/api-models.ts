@@ -32,13 +32,20 @@ export class CharacterInstance {
 
 export class AbilityTargetDTO {
     ability : Ability;
-    targets : Array<Number>;
+    characterPosition: Number;
+    targetPositions : Array<Number>;
+    abilityPosition : Number;
 }
 
 export class BattleTurnDTO {
     spentEnergy : Map<string, Number>;
     effects : Array<Effect>;
     abilities : Array<AbilityTargetDTO>;
+}
+
+export class CostCheckDTO {
+    chosenAbilities : Array<AbilityTargetDTO>;
+    alliedAbilities : Array<Ability>
 }
 
 export class Ability {
@@ -73,6 +80,7 @@ export class Effect {
     interruptable : Boolean;
     physical : Boolean;
     magical : Boolean;
+    affliction : Boolean;
     conditional : Boolean;
     visible : Boolean;
     statMods : Map<string, Number>;
