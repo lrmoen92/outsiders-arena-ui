@@ -25,7 +25,7 @@ export class CharacterInstance {
     // player 1 (1, 2, 3) player 2 (4, 5, 6)
     position : Number;
     characterId : Number;
-    effects : Array<Effect>;
+    effects : Array<BattleEffect>;
     dead : Boolean;
     highlighted : Boolean;
 }
@@ -39,7 +39,7 @@ export class AbilityTargetDTO {
 
 export class BattleTurnDTO {
     spentEnergy : Map<string, Number>;
-    effects : Array<Effect>;
+    effects : Array<BattleEffect>;
     abilities : Array<AbilityTargetDTO>;
 }
 
@@ -68,22 +68,29 @@ export class Ability {
 export class Effect {
     duration : Number;
     avatarUrl : string;
-      // used to identify an effect within the context of a battle (backend assigned)
-    instanceId : Number;
+
     name : string;
     condition : string;
     quality : string;
     description : string;
-    // only for effects on character instances (should be position based)
-    originCharacter : Number;
-    targetCharacter : Number;
     interruptable : Boolean;
     physical : Boolean;
     magical : Boolean;
     affliction : Boolean;
     conditional : Boolean;
     visible : Boolean;
+    stacks : Boolean;
     statMods : Map<string, Number>;
+}
+
+export class BattleEffect extends Effect {
+      // used to identify an effect within the context of a battle (backend assigned)
+      instanceId : Number;
+      // used to identify an effect within the context of a battle (backend assigned)
+      groupId : Number;
+      // only for effects on character instances (should be position based)
+      originCharacter : Number;
+      targetCharacter : Number;
 }
 
 export class Battle {

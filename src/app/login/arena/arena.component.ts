@@ -1,11 +1,9 @@
 import { Component, Input, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect, CostCheckDTO} from 'src/app/model/api-models';
-import { URLS } from 'src/app/utils/constants';
+import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect, BattleEffect} from 'src/app/model/api-models';
+import { URLS, serverPrefix } from 'src/app/utils/constants';
 import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import { timer, VirtualTimeScheduler } from 'rxjs';
-import { FormControl } from '@angular/forms';
 
 @Component({
   selector: 'arena-root',
@@ -36,6 +34,8 @@ export class ArenaComponent {
 
 	arenaId : Number;
 	battle : Battle;
+
+	imgPrefix : string = serverPrefix;
 
 	inBattle : Boolean = false;
 	connected : Boolean = false;
@@ -92,16 +92,17 @@ export class ArenaComponent {
 	lockedAbilities : Array<Number> = [];
 
 	// V identified by effectID, or -1
-	turnEffects : Array<Effect> = [];
+	turnEffects : Array<BattleEffect> = [];
 	isReelEmpty : boolean = true;
 
-	aoeTurnEffects : Map<Number, Array<Effect>> = new Map();
+	aoeTurnEffects : Map<Number, Array<BattleEffect>> = new Map();
 
 
 	chosenAbility: Ability;
 	chosenAbilityPosition : number;
 	availableTargets: Array<Number> = [];
 	abilityCurrentlyClicked: boolean;
+
 
 	// ======================================================================================================================
 	// ------ LIFECYCLE -----------------------------------------------------------------------------------------------------
@@ -132,6 +133,18 @@ export class ArenaComponent {
 	}
 
 	// ======================================================================================================================
+	// ------ AUDIO ---------------------------------------------------------------------------------------------------------
+	// ======================================================================================================================
+
+	playAudio(sound : string){
+		let audio = new Audio();
+		audio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+		
+		audio.load();
+		audio.play();
+	}
+
+	// ======================================================================================================================
 	// ------ CHARACTER SELECT ----------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
@@ -150,8 +163,24 @@ export class ArenaComponent {
 		}
 	}
 
-	// find battle -- OPEN SOCKET
-	findBattle() {
+
+	findLadderBattle() {
+		if (this.allies.length !== 3) {
+			alert ("You must select three characters");
+		} else {
+			this.connectToLadder();
+		}
+	}
+	
+	findQuickBattle() {
+		if (this.allies.length !== 3) {
+			alert ("You must select three characters");
+		} else {
+			this.connectToQuick();
+		}
+	}
+
+	findPrivateBattle() {
 		if (this.opponentName) {
 			if (this.allies.length !== 3) {
 				alert ("You must select three characters");
@@ -161,6 +190,42 @@ export class ArenaComponent {
 		} else {
 			alert("You must enter an opponent's display name.")
 		}
+	}
+	
+	connectToLadder() {
+		console.log('::Looking For Ladder Match');
+		this.httpClient.get(URLS.playerLadderArena + this.player.id + '/' + this.player.level).subscribe(
+			x => {
+				console.log(x);
+				this.arenaId = <Number> x;
+			},
+			y => {
+
+			},
+			() => {
+				this.connectByArenaId();
+			}
+		);
+	}
+
+
+
+
+	connectToQuick() {
+		console.log('::Looking For Quick Match');
+		this.httpClient.get(URLS.playerQuickArena + this.player.id + '/' + this.player.level)
+		.subscribe(
+			x => {
+				this.arenaId = <Number> x;
+			},
+			y => {
+
+			},
+			() => {
+				console.log(this.arenaId);
+				this.connectByArenaId();
+			}
+		);
 	}
 
 	// find the player you'd like to play with, and get their arenaID, or find no player and get your own (and enter matchmaking)
@@ -181,25 +246,41 @@ export class ArenaComponent {
   
 	// simply connect to one "arena", aka one websocket using ArenaID
 	connectByArenaId() {
-		this.webSocket = new WebSocket(URLS.battleSocket + this.arenaId);
-		this.webSocket.onopen = () => {
-			this.handleMessage();
-			this.sendMatchMakingMessage();
-		}
-		this.webSocket.onerror = (e) => {
-			console.log(e);
-		}
+		(async () => { 
+			// Do something before delay
+			console.log('before delay')
+	
+			await this.delay(1000);
+	
+			// Do something after
+			console.log('after delay')
+
+			this.webSocket = new WebSocket(URLS.battleSocket + this.arenaId);
+			this.webSocket.onopen = () => {
+				this.handleMessage();
+				this.sendMatchMakingMessage();
+			}
+			this.webSocket.onerror = (e) => {
+				console.log(e);
+			}
+		})();
 	}
 
+	delay(ms: number) {
+		return new Promise( resolve => setTimeout(resolve, ms) );
+	}
 	// ======================================================================================================================
 	// ------ TIMER --------------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
 	countdownConfigFactory(): CountdownConfig {
 		return {
-			prettyText: (s => {return "TIMER: " + s + " SECONDS LEFT"}),
+			notify: 0,
 			format: `s`,
-			leftTime: 60
+			leftTime: 60,
+			prettyText: (s => {
+				return "TIMER: " + s + " SECONDS LEFT";
+			}),
 		};
 	}
 
@@ -207,27 +288,39 @@ export class ArenaComponent {
 		console.log(event);
 		if(event.action === "start" || event.action == "restart") {
 			this.onStart();
+		} else if (event.action === "notify" && event.left === 8000) {
+			this.playAudio("timerlow");
 		} else if (event.action === "done") {
 			this.onStop();
 		}
 	}
 
 	onStart() {
+		this.playAudio("yourturn");
 		// play starting sound effect
 	}
 
 	onStop() {
-		// play warning sound effect
-		// add 2 second grace period here
-
 		// force turn end and clean up
 		if (this.hasTurn) {
 			if (this.randomsNeeded > 0) {
-
-				// TODO: this cleanup needs to be PERFECT!
-				// put all shit back and empty abilities array
+				if (this.totalSpentEnergy > 0) {
+					if (this.isPlayerOne) {
+						this.setTurnEnergy(this.battle.playerOneEnergy);
+					} else {
+						this.setTurnEnergy(this.battle.playerTwoEnergy);
+					}
+					this.setSpentEnergy(this.newMap());
+					this.refreshTradeState();
+				}
+				this.chosenAbilities = [];
+				// filter out dtos from turn effects
+				let holderArray = this.turnEffects.filter(e => {
+					e.instanceId !== -1;
+				});
+				this.turnEffects = holderArray;
+				this.clearSelection(true);
 			}
-
 			this.sendTurnEndMessage();
 		}
 		// play ending sound effect
@@ -623,7 +716,7 @@ export class ArenaComponent {
 
 			// add ability to UI
 			this.addAbilityToReel(this.chosenAbility);
-			this.clearSelection();
+			this.clearSelection(false);
 
 			// update Energy and call cost check again
 			// be sure to add randoms needed to spent total to get true energy total for cost check
@@ -637,7 +730,7 @@ export class ArenaComponent {
 
 	clickCancel() {
 		if (this.abilityCurrentlyClicked) {
-			this.clearSelection();
+			this.clearSelection(false);
 		} else {
 			if (this.chosenAbilities.length > 0) {
 
@@ -645,16 +738,16 @@ export class ArenaComponent {
 		}
 	}
 
-	clearSelection() {
+	clearSelection(force) {
 		this.abilityCurrentlyClicked = false;
 		this.activeCharacterPosition = -1;
 		this.availableTargets = [];
-		this.hideAbilityPanel();
+		this.hideAbilityPanel(force);
 	}
 
-	hideAbilityPanel() {
+	hideAbilityPanel(force) {
 		// check if ability was clicked but no target chosen
-		if (this.abilityCurrentlyClicked) {
+		if (this.abilityCurrentlyClicked && !force) {
 			// dont hide 
 		} else {
 			this.hoveredAbility = null;
@@ -669,7 +762,7 @@ export class ArenaComponent {
 
 	addAbilityToReel(ability) {
 		this.payCostTemporary(ability);
-		let tempEffect = new Effect();
+		let tempEffect = new BattleEffect();
 		tempEffect.instanceId = -1;
 		tempEffect.avatarUrl = ability.abilityUrl;
 		tempEffect.name = ability.name;
@@ -680,7 +773,7 @@ export class ArenaComponent {
 		this.activeCharacterPosition = -1;
 	}
 
-	removeAbilityFromReel(effect : Effect) {
+	removeAbilityFromReel(effect : BattleEffect) {
 		// gotta reverse engineer the ability
 		if (effect.instanceId > 0) {
 			// can't remove pre-existing conditions breh
@@ -714,6 +807,77 @@ export class ArenaComponent {
 		}
 	}
 
+
+	// ======================================================================================================================
+	// ------ EFFECTS -------------------------------------------------------------------------------------------------------
+	// ======================================================================================================================
+
+	effectStringParser(effect : Effect) : String {
+		let stringArray = [];
+		let durationString = '';
+		let zero;
+		let one;
+		let two;
+		let three;
+		let four;
+		zero = effect.name;
+		one = effect.description;
+
+		if (effect.duration === -1 ) {
+			durationString = 'Infinite';
+		} else if (effect.duration === 999) {
+			durationString = 'Ends This Turn';
+		} else if (effect.duration === 995) {
+			durationString = 'Ends This Turn';
+		} else if (effect.duration === 1) {
+			durationString = effect.duration + ' more Turn'
+		} else {
+			durationString = effect.duration + ' more Turns'
+		}
+		
+		two = 'Duration : ' + durationString
+
+		if (effect.stacks) {
+			let stacks = effect.quality.charAt(effect.quality.length - 1);
+			three = 'Stacks: ' + stacks;
+		}
+
+		if (effect.interruptable) {
+			four = 'Interruptable';
+		}
+
+		stringArray.push(zero);
+		stringArray.push(one);
+		stringArray.push(two);
+		stringArray.push(three);
+		stringArray.push(four);
+
+		let final = stringArray.join(' \n ');
+		console.log(final);
+		return final;
+	}
+
+	parseHiddenEffects(character : CharacterInstance) : Array<Effect> {
+		let effects = [];
+		for (let e of character.effects) {
+			if (e.visible) {
+				effects.push(e);
+				// add it
+			} else {
+				if (!this.isPlayerOne && e.originCharacter > 2) {
+					effects.push(e);
+					// add it if it's ours
+				}
+				if (this.isPlayerOne && e.originCharacter < 3) {
+					effects.push(e);
+					// add it if it's ours
+				}
+			}
+		}
+
+		return effects;
+	}
+
 	// ======================================================================================================================
 	// ------ SEND MESSAGES -------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
@@ -726,8 +890,7 @@ export class ArenaComponent {
 			char2: this.allies[1].id,
 			char3: this.allies[2].id,
 			playerId: this.player.id,
-			arenaId: this.arenaId,
-			opponentName: this.opponentName 
+			arenaId: this.arenaId
 		};
 		this.webSocket.send(JSON.stringify(msg));
 	}
@@ -794,10 +957,10 @@ export class ArenaComponent {
 		// BUILD DTO
 
 		let spentEnergy : Map<string, Number> = this.spentEnergy;
-		let abilityDTOs : Array<AbilityTargetDTO> = this.chosenAbilities;
-		let effects : Array<Effect> = this.turnEffects;
+		let abilityDTOs : Array<AbilityTargetDTO> = [];
+		let effects : Array<BattleEffect> = this.turnEffects;
 
-		let finalEffects : Array<Effect> = [];
+		let finalEffects : Array<BattleEffect> = [];
 
 		console.log("TURN EFFECTS");
 		console.log(this.turnEffects);
@@ -805,8 +968,7 @@ export class ArenaComponent {
 		console.log(this.aoeTurnEffects);
 		for (let i = 0; i < effects.length; i++) {
 			let efct = effects[i];
-			let existingEffect = this.aoeTurnEffects.get(efct.instanceId);
-			let isAoe = false;
+			let existingEffect = this.aoeTurnEffects.get(efct.groupId);
 
 			if (existingEffect) {
 				// parse and add back all existing effects, and check for ghost AOE effects floating
@@ -826,6 +988,12 @@ export class ArenaComponent {
 				}
 			} else {
 				// this should always be a mock
+				this.chosenAbilities.forEach(adto => {
+					// this reorders the chosenAbilities output to match the turnEffects
+					if (adto.ability.name == efct.name) {
+						abilityDTOs.push(adto);
+					}
+				})
 				console.log(efct);
 				finalEffects.push(efct);
 			}
@@ -997,9 +1165,28 @@ export class ArenaComponent {
 			console.log("They ended their turn");
 		}
 
+		for (let ch of this.battle.playerOneTeam) {
+			for (let chNew of msg.battle.playerOneTeam) {
+				if (ch.position == chNew.position) {
+					if (!ch.dead && chNew.dead) {
+						this.playAudio("die");
+					}
+				}
+			}
+		}
+
+		for (let ch of this.battle.playerTwoTeam) {
+			for (let chNew of msg.battle.playerTwoTeam) {
+				if (ch.position == chNew.position) {
+					if (!ch.dead && chNew.dead) {
+						this.playAudio("die");
+					}
+				}
+			}
+		}
+
 		this.hasTurn = !this.hasTurn;
 		this.battle = msg.battle;
-
 
 		if (this.isPlayerOne) {
 			this.setTurnEnergy(this.battle.playerOneEnergy);
@@ -1036,9 +1223,11 @@ export class ArenaComponent {
 			}
 		}
 		if(defeat) {
+			this.playAudio("loss");
 			alert("YOU HAVE LOST");
 		}
 		if(victory) {
+			this.playAudio("victory");
 			alert("YOU HAVE WON");
 		}
 
@@ -1063,16 +1252,16 @@ export class ArenaComponent {
 		// gotta populate a map of <instanceID, effect> so we dont show AOE more than once on turnEffects // TODO:
 		for(let ally of this.battleAllies) {
 			if(ally.effects.length > 0) {
-				for(let effect of ally.effects) {
+				for(let effect of ally.effects.values()) {
 					if((effect.originCharacter > 2 && !this.isPlayerOne) || (effect.originCharacter < 3 && this.isPlayerOne)) {
-						if (this.aoeTurnEffects.get(effect.instanceId) != null) {
-							let old = this.aoeTurnEffects.get(effect.instanceId);
+						if (this.aoeTurnEffects.get(effect.groupId) != null) {
+							let old = this.aoeTurnEffects.get(effect.groupId);
 							old.push(effect);
-							this.aoeTurnEffects.set(effect.instanceId, old);
+							this.aoeTurnEffects.set(effect.groupId, old);
 						} else {
 							let effects = [];
 							effects.push(effect);
-							this.aoeTurnEffects.set(effect.instanceId, effects);
+							this.aoeTurnEffects.set(effect.groupId, effects);
 						}
 					}
 				}
@@ -1081,16 +1270,16 @@ export class ArenaComponent {
 
 		for(let enemy of this.battleEnemies) {
 			if(enemy.effects.length > 0) {
-				for(let effect of enemy.effects) {
+				for(let effect of enemy.effects.values()) {
 					if((effect.originCharacter > 2 && !this.isPlayerOne) || (effect.originCharacter < 3 && this.isPlayerOne)) {
-						if (this.aoeTurnEffects.get(effect.instanceId) != null) {
-							let old = this.aoeTurnEffects.get(effect.instanceId);
+						if (this.aoeTurnEffects.get(effect.groupId) != null) {
+							let old = this.aoeTurnEffects.get(effect.groupId);
 							old.push(effect);
-							this.aoeTurnEffects.set(effect.instanceId, old);
+							this.aoeTurnEffects.set(effect.groupId, old);
 						} else {
 							let effects = [];
 							effects.push(effect);
-							this.aoeTurnEffects.set(effect.instanceId, effects);
+							this.aoeTurnEffects.set(effect.groupId, effects);
 						}
 					}
 				}

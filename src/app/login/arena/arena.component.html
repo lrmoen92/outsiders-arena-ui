@@ -1,37 +1,45 @@
 <div id="battleDiv">
 
   <div *ngIf="!inBattle" id="pre-battle">
-    <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
-    <br>
-    <div id="character-select">
-      <img *ngFor="let char of allCharacters" (click)="addCharacter(char.id)" [src]="char.avatarUrl" class="ally-portrait-small">
-    </div>
 
     <div>
-      TEAM:
-    </div>
-    <div *ngFor="let ally of allies">
-      <img [src]="ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
-    </div>
+      <div class="playerInfo">
+        <img [src]="player.avatarUrl" id="player-portrait">
+        {{ player.displayName }}
+      </div>
 
-    <button (click)="findBattle()">
-      FIND BATTLE
-    </button>
-    <!-- <span class="fas fa-spinner loading"></span> -->
+      <div id="battle-select">
+        <button (click)="findLadderBattle()">
+          LADDER MATCH
+        </button>
+        <button (click)="findQuickBattle()">
+          QUICK MATCH
+        </button>
+        <button (click)="findPrivateBattle()">
+          PRIVATE MATCH
+        </button>
+        <br>
+        <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
+      </div>
+    </div>
+    <div id="character-select">
+      <img *ngFor="let char of allCharacters" (click)="addCharacter(char.id)" [src]="char.avatarUrl" class="ally-portrait-small">
+      <div>
+        TEAM:
+      </div>
+      <img *ngFor="let ally of allies" [src]="ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
+    </div>
   </div>
 
   <div *ngIf="inBattle" id="battle">
     <div id="header">
 
-      <div id="playerInfo">
+      <div class="playerInfo">
         <img [src]="player.avatarUrl" id="player-portrait">
         {{ player.displayName }}
       </div>
 
       <div id="centerPanel">
-
-
-        <div id="resources">
 
           <div id="timer">
             <countdown [config]="config" (event)="handleTimerEvent($event)">
@@ -69,7 +77,7 @@
 
           <br>
 
-          <div id="actions">
+          <div id="actionsHeader">
             <button (click)="clickEnergyTrade()" [disabled]="!hasTurn || abilitiesAreChosen()">
               Trade
             </button>
@@ -87,7 +95,6 @@
               <div class="energy energy-divinity"></div>
             </div>
           </div>
-        </div>
       </div>
 
       <div id="opponentInfo">
@@ -98,104 +105,107 @@
 
     <div id="body">
 
-      <div id="allies">
-
-        <div class="ally">
-
           <div class="ally-info">
-            <div *ngFor="let ally of battleAllies">
-              <div>
-                EFFECTS: 
-                <span *ngFor="let effect of ally.effects">
-                  <!-- TODO
-                  I need to make an effect styled image here later -->
-                  {{ effect.name }}
+            <div *ngFor="let ally of battleAllies" class="battle-allies">
+              <div class="ally-info-portrait">
+                <img [ngStyle]="getImageStyleCharacter(ally.position)" [src]="allyPortraits.get(ally.characterId)" class="ally-portrait" (click)="clickTarget(ally.position)">        
+                <div>
+                  {{ ally.hp }} / 100
+                </div>
+              </div>
+
+              <div class="ally-info-effects">
+                <span *ngFor="let effect of parseHiddenEffects(ally)" class="effect ally-effect">
+                  <span [matTooltip]="effectStringParser(effect)" matTooltipClass="my-tooltip">
+                    <img [src]="imgPrefix + effect.avatarUrl">
+                  </span>
                 </span>
               </div>
-              <img [ngStyle]="getImageStyleCharacter(ally.position)" [src]="allyPortraits.get(ally.characterId)" class="ally-portrait" (click)="clickTarget(ally.position)">        
-              <div>
-                {{ ally.hp }} / 100 HP
-              </div>
+              
+
             </div>
           </div>
           
           <div class="abilities">
             <div *ngFor="let ally of allies" class="ally-abilities">
 
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 0)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 0)" [src]="ally.slot1.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 0)">
+                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 0)" [src]="imgPrefix + ally.slot1.abilityUrl" class="ally-ability-portrait">
               </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 1)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 1)" [src]="ally.slot2.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 1)">
+                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 1)" [src]="imgPrefix + ally.slot2.abilityUrl" class="ally-ability-portrait">
               </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 2)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 2)" [src]="ally.slot3.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 2)">
+                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 2)" [src]="imgPrefix + ally.slot3.abilityUrl" class="ally-ability-portrait">
               </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel()" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 3)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 3)" [src]="ally.slot4.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 3)">
+                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 3)" [src]="imgPrefix + ally.slot4.abilityUrl" class="ally-ability-portrait">
               </div>
             </div>
           </div>
 
-        </div>
-
-      </div>
-
-      <div id="enemies">
-        <div class="enemy" *ngFor="let enemy of battleEnemies">
           <div class="enemy-info">
-            <div>
-              EFFECTS: 
-              <span *ngFor="let effect of enemy.effects">
-                <!-- TODO
-                I need to make an effect styled image here later -->
-                {{ effect.name }}
-              </span>
-            </div>
-            <img [ngStyle]="getImageStyleCharacter(enemy.position)" [src]="enemyPortraits.get(enemy.characterId)" (click)="clickTarget(enemy.position)" class="enemy-portrait">
-            <div>
-              {{ enemy.hp }} / 100 HP
+            <div *ngFor="let enemy of battleEnemies" class="battle-enemies">
+
+              <div class="enemy-info-effects">
+                <span *ngFor="let effect of parseHiddenEffects(enemy)" class="effect enemy-effect">
+                  <span [matTooltip]="effectStringParser(effect)" matTooltipClass="my-tooltip">
+                    <img [src]="imgPrefix + effect.avatarUrl">
+                  </span>
+                </span>
+              </div>
+
+              <div class="enemy-info-portrait">
+                <img [ngStyle]="getImageStyleCharacter(enemy.position)" [src]="enemyPortraits.get(enemy.characterId)" (click)="clickTarget(enemy.position)" class="enemy-portrait">
+                <div>
+                  {{ enemy.hp }} / 100
+                </div>
+              </div>
+              <br>
+  
             </div>
           </div>
-        </div>
-      </div>
+
     </div>
-    
-    <br>
 
     <div id="footer">
       <div id="abilityWindow">
-        <div *ngIf="abilityCurrentlyClicked" id="actions">
-          <button (click)="clickCancel()" [disabled]="!hasTurn">
-            Cancel
-          </button>
-        </div>
 
+
+
+        <div id="abilityInfo">
+          <div *ngIf="hoveredAbility">
+            <div *ngIf="abilityCurrentlyClicked" id="actionsFooter">
+              <button (click)="clickCancel()" [disabled]="!hasTurn">
+                Cancel
+              </button>
+            </div>
+            <div *ngFor="let energy of hoveredAbility.cost" id="abilityCost" [class]="energy">
+            </div>
+            <span>{{ hoveredAbility.name }}</span>
+            <br>
+            <span>Cooldown: {{ hoveredAbility.cooldown }}</span>
+            <br>
+            <span>{{ hoveredAbility.description }}</span>
+            <br>
+          </div>
+        </div>
 
         <div *ngIf="!isReelEmpty" id="chosenAbilities">
           <div cdkDropList cdkDropListOrientation="horizontal" class="example-list" (cdkDropListDropped)="drop($event)">
             <div *ngFor="let effect of turnEffects" class="example-box" cdkDrag>
-              <img [src]="effect.avatarUrl">
-              <span> {{ effect.name }} </span>
-              <button *ngIf="effect.instanceId < 0" (click)="removeAbilityFromReel(effect)"> REMOVE </button> 
+              <img [src]="imgPrefix + effect.avatarUrl" class="ally-ability-portrait">
+              <span class="reel-effect-name">
+                {{ effect.name }}
+              </span>
+              <button class="remove-button" *ngIf="effect.instanceId < 0" (click)="removeAbilityFromReel(effect)"> REMOVE </button> 
             </div>
           </div>
         </div>
 
-
-        <div id="abilityInfo" *ngIf="hoveredAbility">
-          <div *ngFor="let energy of hoveredAbility.cost" id="abilityCost" [class]="energy">
-          </div>
-          <span>{{ hoveredAbility.name }}</span>
-          <br>
-          <span>Cooldown: {{ hoveredAbility.cooldown }}</span>
-          <br>
-          <span>{{ hoveredAbility.description }}</span>
-          <br>
-        </div>
-
-
       </div>
     </div>
+
+
   </div>
 </div>

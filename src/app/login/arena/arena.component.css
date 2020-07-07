@@ -2,30 +2,32 @@ body {
     font-size: 10px;
 }
 
-#header {
-    width : 100%;
-    height : 30%;
+img {
+    max-width: 100%;
+    max-height: 100%;
 }
 
-#playerInfo {
-    width : 30%;
+.playerInfo {
+    width : 20%;
     height : 100%;
     float: left;
     display: block;
 }
 
 #opponentInfo {
-    width : 30%;
+    width : 20%;
     height : 100%;
     float: left;
     display: block;
 }
 
 #centerPanel {
-    width : 40%;
+    width : 60%;
     height : 100%;
     float: left;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 #energy-pool {
@@ -40,7 +42,6 @@ body {
 
 #randoms {
     width : 100%;
-
 }
 
 .left-text {
@@ -146,31 +147,16 @@ body {
     border-radius : 2px;
 }
 
-/* 
-.loading {
-    font-size: 50px;
-    animation: load 1s linear infinite;
-} */
-
-/* @keyframes load {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-} */
-
-#body {
-    width : 100%;
-    height : 50%;
-}
 
 #pre-battle {
     width : 100%;
 }
 
 #character-select {
+    width : 100%;
+}
+
+#battle-select {
     width : 100%;
 }
 
@@ -195,60 +181,65 @@ body {
 }
 
 .ally-portrait {
-    width : 100px;
-    height : 100px;
+    width : 75px;
+    height : 75px;
 }
 
 .enemy-portrait {
-    width : 100px;
-    height : 100px;
+    width : 75px;
+    height : 75px;
 }
 
 .ally-ability-portrait {
-    width : 100px;
-    height : 100px;
+    width : 50px;
+    height : 50px;
 }
 
 #player-portrait {
-    width : 100px;
-    height : 100px;
+    width : 75px;
+    height : 75px;
 }
 
 #opponent-portrait {
-    width : 100px;
-    height : 100px;
+    width : 75px;
+    height : 75px;
 }
 
 
 /* ALLIES AND ENEMIES */
 
-
-#allies {
-    height : 100%;
-    width : 70%;
-    float : left;
-}
-
-.ally {
-    width: 100%;
-    float: left;
-}
-
 .ally-info {
     height: 100%;
-    width: 30%;
+    width: 25%;
     float: left;
 }
 
 .abilities {
-    width : 70%;
+    width : 50%;
     height : 100%;
     float : left
+}
+
+.battle-allies {
+    float :left;
+    width : 100%;
+}
+
+.battle-enemies {
+    float : right;
+    width : 100%;
+}
+
+.enemy-info {
+    width: 25%;
+    height : 100%;
+    float : right;
 }
 
 .ally-ability {
     height: 100%;
     width: 25%;
+    border : 2px;
     float : left;
 }
 
@@ -261,38 +252,105 @@ body {
 #enemies {
     height : 100%;
     width : 30%;
+}
+
+.ally-info-effects {
+    width: 30%;
     float : right;
 }
 
-.enemy-info {
-    width: 100%;
+.enemy-info-effects {
+    width : 30%;
+    float : left;
+}
+
+.ally-info-portrait {
+    float : left;
 }
 
 
+.enemy-info-portrait {
+    float : right;
+}
 
+.effect {
+    height : 20px;
+    width : 20px;
+}
+
+.ally-effect {
+    float : left;
+}
+
+.enemy-effect {
+    float : right;
+}
+
+.remove-button {
+    width : px;
+    font-size : 11px;
+}
+
+.reel-effect-name {
+    width : 75px;
+    font-size: 11px;
+}
+
+#header {
+    position : fixed;
+    width : 80%;
+    height : 20%;
+}
+
+#body {
+    position : fixed;
+    top : 30%;
+    width : 80%;
+    height : 50%;
+}
 
 /* FOOTER */
 
 #footer {
-    width : 100%;
-    height : 10%;
+    position : fixed;
+    top : 80%;
+    width : 80%;
+    height : 20%;
+}
+
+
+
+#actionsHeader {
+    float : left;
+}
+
+#actionsFooter {
+    float : left;
+}
+
+#timer {
+    float : left;
+}
+
+#energy {
+    float : left;
 }
 
 #abilityWindow {
     width : 100%;
     height : 100%;
+    display : flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#chosenAbilities {
+    float : right;
 }
 
 #abilityInfo {
     float : left;
-}
-
-#chosenAbilities {
-    float : left;
-}
-
-#actions {
-    float : left;
+    width : 60%;
 }
 
 
@@ -308,21 +366,22 @@ body {
     flex-direction: row;
     background: white;
     border-radius: 4px;
-    overflow: hidden;
+    overflow-x: scroll;
   }
   
   .example-box {
-    padding: 20px 10px;
+    padding: 5px 5px 5px 5px;
     border-right: solid 1px #ccc;
     color: rgba(0, 0, 0, 0.87);
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     box-sizing: border-box;
     cursor: move;
     background: white;
-    font-size: 14px;
+    min-height: 100px;
+    min-width: 50px;
+    font-size: 12px;
     flex-grow: 1;
     flex-basis: 0;
   }
