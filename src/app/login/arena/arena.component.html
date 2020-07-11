@@ -127,8 +127,7 @@
           </div>
           
           <div class="abilities">
-            <div *ngFor="let ally of allies" class="ally-abilities">
-
+            <div *ngFor="let ally of filterAllies()" class="ally-abilities">
               <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 0)">
                 <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 0)" [src]="imgPrefix + ally.slot1.abilityUrl" class="ally-ability-portrait">
               </div>

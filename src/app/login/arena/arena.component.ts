@@ -43,6 +43,7 @@ export class ArenaComponent {
 	isPlayerOne : Boolean = false;
 
 	allies : Array<Character> = [];
+	tempAllies : Array<Character> = [];
 	enemies : Array<Character> = [];
 
 	allyPortraits : Map<Number, String> = new Map;
@@ -78,7 +79,6 @@ export class ArenaComponent {
 	totalSpentEnergy : number = 0;
 	randomsNeeded : number = 0;
 
-
 	// NGMODELS VVV
 	// In battle variables VVV
 
@@ -102,6 +102,10 @@ export class ArenaComponent {
 	chosenAbilityPosition : number;
 	availableTargets: Array<Number> = [];
 	abilityCurrentlyClicked: boolean;
+
+	playingAudio;
+	secondaryAudio;
+	backingAudio;
 
 
 	// ======================================================================================================================
@@ -137,11 +141,47 @@ export class ArenaComponent {
 	// ======================================================================================================================
 
 	playAudio(sound : string){
-		let audio = new Audio();
-		audio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
-		
-		audio.load();
-		audio.play();
+		if (this.playingAudio){
+			if (this.playingAudio.ended) {
+				this.stopAudio();
+			}
+		}
+		if (!this.playingAudio) {
+	
+			this.playingAudio = new Audio();
+			this.playingAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+			
+			this.playingAudio.load();
+			this.playingAudio.play();
+		} else if (!this.secondaryAudio) {
+			if (this.playingAudio.src !== this.imgPrefix + "/assets/sounds/" + sound + ".wav") {
+				this.secondaryAudio = new Audio();
+				this.secondaryAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+				
+				this.secondaryAudio.load();
+				this.secondaryAudio.play();
+			}
+		} else {
+			this.stopAudio();
+
+			this.playingAudio = new Audio();
+			this.playingAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+			
+			this.playingAudio.load();
+			this.playingAudio.play();
+		}
+
+	}
+
+	stopAudio() {
+		if (this.playingAudio) {
+			this.playingAudio.pause();
+			this.playingAudio = null;
+		}
+		if (this.secondaryAudio) {
+			this.secondaryAudio.pause();
+			this.secondaryAudio = null;
+		}
 	}
 
 	// ======================================================================================================================
@@ -285,10 +325,10 @@ export class ArenaComponent {
 	}
 
 	handleTimerEvent(event: CountdownEvent) {
-		console.log(event);
+		// console.log(event);
 		if(event.action === "start" || event.action == "restart") {
 			this.onStart();
-		} else if (event.action === "notify" && event.left === 8000) {
+		} else if (event.action === "notify" && event.left === 8000 && this.hasTurn) {
 			this.playAudio("timerlow");
 		} else if (event.action === "done") {
 			this.onStop();
@@ -599,6 +639,49 @@ export class ArenaComponent {
 	// ------ ABILITIES/TARGETS ---------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
+	filterAllies() {
+		this.tempAllies = [];
+		for (let ally of this.allies) {
+			for (let battleAlly of this.battleAllies) {
+				if (ally.id === battleAlly.characterId) {
+					let tempAlly = ally;
+					for (let effect of battleAlly.effects) {
+						if (effect.statMods["COST_CHANGE"] !== null) {
+							let num = effect.statMods["COST_CHANGE"];
+							if (num > 0) {
+								for (let i = num; i > 0; i--) {
+									tempAlly.slot1.cost.push("RANDOM");
+									tempAlly.slot2.cost.push("RANDOM");
+									tempAlly.slot3.cost.push("RANDOM");
+									tempAlly.slot4.cost.push("RANDOM");
+								}
+							} else if (num < 0) {
+								for (let i = num; i < 0; i++) {
+									if (tempAlly.slot1.cost.includes("RANDOM")) {
+										tempAlly.slot1.cost.splice(tempAlly.slot1.cost.findIndex(e => {return e === "RANDOM"}), 1);
+									}
+									if (tempAlly.slot2.cost.includes("RANDOM")) {
+										tempAlly.slot2.cost.splice(tempAlly.slot2.cost.findIndex(e => {return e === "RANDOM"}), 1);
+									}
+									if (tempAlly.slot3.cost.includes("RANDOM")) {
+										tempAlly.slot3.cost.splice(tempAlly.slot3.cost.findIndex(e => {return e === "RANDOM"}), 1);
+									}
+									if (tempAlly.slot4.cost.includes("RANDOM")) {
+										tempAlly.slot4.cost.splice(tempAlly.slot4.cost.findIndex(e => {return e === "RANDOM"}), 1);
+									}
+								}
+							}
+						}
+					}
+					
+					this.tempAllies.push(tempAlly);
+				}
+			}
+		}
+
+		return this.tempAllies;
+	}
+
 	clickAbility(ability, parentPosition, abilityPosition) {
 		if (this.abilityCurrentlyClicked) {
 			// can't click abilities twice
@@ -853,7 +936,7 @@ export class ArenaComponent {
 		stringArray.push(four);
 
 		let final = stringArray.join(' \n ');
-		console.log(final);
+		// console.log(final);
 		return final;
 	}
 
@@ -1032,6 +1115,7 @@ export class ArenaComponent {
 		this.availableTargets = [];
 		this.randomsNeeded = 0;
 		this.randomsAreNeeded = false;
+		this.stopAudio();
 	}
 
 
