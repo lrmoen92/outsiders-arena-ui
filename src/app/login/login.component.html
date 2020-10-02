@@ -7,8 +7,15 @@
     </button>
 </div>
 
-<arena-root *ngIf="loggedIn"
+
+<div *ngIf="loggedIn" >
+    <router-outlet>
+
+    </router-outlet>
+</div>
+
+<!-- <arena-root *ngIf="loggedIn"
             [allCharacters]="allCharacters"
             [player]="player">
 
-</arena-root>
+</arena-root> -->

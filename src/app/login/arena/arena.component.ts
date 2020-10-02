@@ -1,16 +1,21 @@
-import { Component, Input, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect, BattleEffect} from 'src/app/model/api-models';
 import { URLS, serverPrefix } from 'src/app/utils/constants';
 import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
+import { Router } from '@angular/router';
+import { CharacterService } from '../character/character.service';
+import { LoginService } from '../login.service';
+import { ArenaService } from './arena.service';
 
 @Component({
   selector: 'arena-root',
   templateUrl: './arena.component.html',
   styleUrls: ['./arena.component.css']
 })
-export class ArenaComponent {
+export class ArenaComponent implements OnInit {
 
 	// ======================================================================================================================
 	// ------ PROPERTIES ----------------------------------------------------------------------------------------------------
@@ -22,11 +27,11 @@ export class ArenaComponent {
 	@ViewChild(CountdownComponent) private countdown: CountdownComponent;
 	config: CountdownConfig;
 
-	@Input()
 	allCharacters : Array<Character>;
-
-	@Input()
 	player : Player;
+	service : CharacterService;
+	loginService: LoginService;
+	arenaService: ArenaService;
 
 	//ngmodel from input
 	opponentName : string;
@@ -84,12 +89,16 @@ export class ArenaComponent {
 
 	activeCharacterPosition : Number = -1;
 	hoveredAbility : Ability = null;
+	hoveredAbilityCooldown: number;
 
-	alliedAbilities : Array<Ability> = [];
-	availableAbilities : Array<Number> = [];
+	availableAbilities : Array<number> = [];
 	chosenAbilities : Array<AbilityTargetDTO> = [];
 
 	lockedAbilities : Array<Number> = [];
+
+	allyCostFlag1 : boolean = false;
+	allyCostFlag2 : boolean = false;
+	allyCostFlag3 : boolean = false;
 
 	// V identified by effectID, or -1
 	turnEffects : Array<BattleEffect> = [];
@@ -107,27 +116,83 @@ export class ArenaComponent {
 	secondaryAudio;
 	backingAudio;
 
+	faVolumeUp = faVolumeUp;
+
+	volume: number = 0.5;
+	showAreYouSure: boolean;
 
 	// ======================================================================================================================
 	// ------ LIFECYCLE -----------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-	constructor(httpClient : HttpClient) {
+	constructor(
+		httpClient : HttpClient, 
+		service : CharacterService, 
+		loginService : LoginService,
+		arenaService : ArenaService
+	) {
 		this.httpClient = httpClient;
+		this.service = service;
+		this.loginService = loginService;
+		this.arenaService = arenaService;
 	}
 
 	ngOnInit() {
-		if (this.webSocket != null) {
+		if (this.webSocket != null && !this.arenaService.isInBattle()) {
 			this.disconnect();
 		}
 		this.config = this.countdownConfigFactory();
+
+		this.player = this.loginService.loggedInPlayer();
+
+		this.service.getCharacters().subscribe(
+			x => {
+			  this.service.setCharacters(<any[]> x);
+			},
+			y => {
+	  
+			},
+			() => {
+				this.allCharacters = this.service.getAllCharacters();
+				console.log("IS IN BATTLE");
+				console.log(this.arenaService.isInBattle());
+				if (this.arenaService.isInBattle()) {
+					this.battle = this.arenaService.getCurrentBattle();
+					this.inBattle = this.arenaService.isInBattle();
+					this.opponent = this.arenaService.getCurrentOpponent();
+					this.isPlayerOne = this.arenaService.getIsPlayerOne();
+					this.hasTurn = this.arenaService.getHasTurn();
+		
+					this.allies = this.arenaService.getAllies();
+					this.battleAllies = this.arenaService.getBattleAllies();
+					this.enemies = this.arenaService.getEnemies();
+					this.battleEnemies = this.arenaService.getBattleAllies();
+					this.tempAllies = this.arenaService.getTempAllies();
+					
+					this.filterAllies();
+		
+					this.turnEnergy = this.arenaService.getEnergy();
+					this.spentEnergy = this.arenaService.getSpent();
+		
+					if (this.hasTurn) {
+						this.checkForAoes();
+						this.sendCostCheck();
+					} else {
+						this.disableAbilities();
+					}
+				}
+			}
+		);
+
+
+
 	}
 
-	// ngOnDestroy() {
-	// 	if (this.webSocket != null) {
-	// 		this.disconnect();
-	// 	}
-	// }
+	ngOnDestroy() {
+		if (this.webSocket != null && !this.arenaService.isInBattle()) {
+			this.disconnect();
+		}
+	}
 
 	// close and null out web socket
 	disconnect() {
@@ -141,6 +206,7 @@ export class ArenaComponent {
 	// ======================================================================================================================
 
 	playAudio(sound : string){
+
 		if (this.playingAudio){
 			if (this.playingAudio.ended) {
 				this.stopAudio();
@@ -150,6 +216,7 @@ export class ArenaComponent {
 	
 			this.playingAudio = new Audio();
 			this.playingAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+			this.playingAudio.volume = this.volume;
 			
 			this.playingAudio.load();
 			this.playingAudio.play();
@@ -157,7 +224,8 @@ export class ArenaComponent {
 			if (this.playingAudio.src !== this.imgPrefix + "/assets/sounds/" + sound + ".wav") {
 				this.secondaryAudio = new Audio();
 				this.secondaryAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
-				
+				this.secondaryAudio.volume = this.volume;
+
 				this.secondaryAudio.load();
 				this.secondaryAudio.play();
 			}
@@ -166,7 +234,8 @@ export class ArenaComponent {
 
 			this.playingAudio = new Audio();
 			this.playingAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
-			
+			this.playingAudio.volume = this.volume;
+
 			this.playingAudio.load();
 			this.playingAudio.play();
 		}
@@ -237,12 +306,13 @@ export class ArenaComponent {
 		this.httpClient.get(URLS.playerLadderArena + this.player.id + '/' + this.player.level).subscribe(
 			x => {
 				console.log(x);
-				this.arenaId = <Number> x;
+				this.arenaService.setArenaId(<Number> x);
 			},
 			y => {
 
 			},
 			() => {
+				this.arenaId = this.arenaService.getArenaId();
 				this.connectByArenaId();
 			}
 		);
@@ -256,13 +326,14 @@ export class ArenaComponent {
 		this.httpClient.get(URLS.playerQuickArena + this.player.id + '/' + this.player.level)
 		.subscribe(
 			x => {
-				this.arenaId = <Number> x;
+				this.arenaService.setArenaId(<Number> x);
 			},
 			y => {
 
 			},
 			() => {
 				console.log(this.arenaId);
+				this.arenaId = this.arenaService.getArenaId();
 				this.connectByArenaId();
 			}
 		);
@@ -273,12 +344,13 @@ export class ArenaComponent {
 		console.log('::Connecting to ' + name);
 		this.httpClient.get(URLS.playerArena + this.player.id + '/' + name).subscribe(
 			x => {
-				this.arenaId = <Number> x;
+				this.arenaService.setArenaId(<Number> x);
 			},
 			y => {
 
 			},
 			() => {
+				this.arenaId = this.arenaService.getArenaId();
 				this.connectByArenaId();
 			}
 		);
@@ -294,8 +366,8 @@ export class ArenaComponent {
 	
 			// Do something after
 			console.log('after delay')
-
-			this.webSocket = new WebSocket(URLS.battleSocket + this.arenaId);
+			this.arenaService.setWebSocket(this.arenaId);
+			this.webSocket = this.arenaService.getCurrentWebSocket();
 			this.webSocket.onopen = () => {
 				this.handleMessage();
 				this.sendMatchMakingMessage();
@@ -303,6 +375,7 @@ export class ArenaComponent {
 			this.webSocket.onerror = (e) => {
 				console.log(e);
 			}
+			this.arenaService.setWebSocketDirect(this.webSocket);
 		})();
 	}
 
@@ -319,14 +392,16 @@ export class ArenaComponent {
 			format: `s`,
 			leftTime: 60,
 			prettyText: (s => {
-				return "TIMER: " + s + " SECONDS LEFT";
+				return "TIMER: " + s;
 			}),
 		};
 	}
 
 	handleTimerEvent(event: CountdownEvent) {
 		// console.log(event);
-		if(event.action === "start" || event.action == "restart") {
+		if(event.action === "start") {
+			this.onStart();
+		} else if (event.action === "restart" && this.hasTurn) { 
 			this.onStart();
 		} else if (event.action === "notify" && event.left === 8000 && this.hasTurn) {
 			this.playAudio("timerlow");
@@ -355,10 +430,11 @@ export class ArenaComponent {
 				}
 				this.chosenAbilities = [];
 				// filter out dtos from turn effects
-				let holderArray = this.turnEffects.filter(e => {
-					e.instanceId !== -1;
+				this.turnEffects.forEach((value, index, array) => {
+					if (value.instanceId === -1) {
+						array.splice(index);
+					}
 				});
-				this.turnEffects = holderArray;
 				this.clearSelection(true);
 			}
 			this.sendTurnEndMessage();
@@ -634,55 +710,104 @@ export class ArenaComponent {
 		this.energyTrade = null;
 	}
 
-
 	// ======================================================================================================================
 	// ------ ABILITIES/TARGETS ---------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
 	filterAllies() {
-		this.tempAllies = [];
+		let counter = 0;
+		let newAllies = [];
+		
+		this.allyCostFlag1 = false;
+		this.allyCostFlag2 = false;
+		this.allyCostFlag3 = false;
+		
 		for (let ally of this.allies) {
 			for (let battleAlly of this.battleAllies) {
 				if (ally.id === battleAlly.characterId) {
-					let tempAlly = ally;
-					for (let effect of battleAlly.effects) {
-						if (effect.statMods["COST_CHANGE"] !== null) {
-							let num = effect.statMods["COST_CHANGE"];
-							if (num > 0) {
-								for (let i = num; i > 0; i--) {
-									tempAlly.slot1.cost.push("RANDOM");
-									tempAlly.slot2.cost.push("RANDOM");
-									tempAlly.slot3.cost.push("RANDOM");
-									tempAlly.slot4.cost.push("RANDOM");
+
+					let tempAlly = JSON.parse(JSON.stringify((ally)));
+					let shouldChange = (counter === 0 && !this.allyCostFlag1) ||
+										(counter === 1 && !this.allyCostFlag2) ||
+										(counter === 2 && !this.allyCostFlag3);
+					let didChange = false;
+					if (shouldChange) {
+						for (let effect of battleAlly.effects) {
+							if (effect.statMods["COST_CHANGE"] !== null) {
+								let num = effect.statMods["COST_CHANGE"];
+								if (num) {
+									didChange = true;
 								}
-							} else if (num < 0) {
-								for (let i = num; i < 0; i++) {
-									if (tempAlly.slot1.cost.includes("RANDOM")) {
-										tempAlly.slot1.cost.splice(tempAlly.slot1.cost.findIndex(e => {return e === "RANDOM"}), 1);
+								if (num > 0) {
+									for (let i = num; i > 0; i--) {
+										tempAlly.slot1.cost.push("RANDOM");
+										tempAlly.slot2.cost.push("RANDOM");
+										tempAlly.slot3.cost.push("RANDOM");
+										tempAlly.slot4.cost.push("RANDOM");
 									}
-									if (tempAlly.slot2.cost.includes("RANDOM")) {
-										tempAlly.slot2.cost.splice(tempAlly.slot2.cost.findIndex(e => {return e === "RANDOM"}), 1);
-									}
-									if (tempAlly.slot3.cost.includes("RANDOM")) {
-										tempAlly.slot3.cost.splice(tempAlly.slot3.cost.findIndex(e => {return e === "RANDOM"}), 1);
-									}
-									if (tempAlly.slot4.cost.includes("RANDOM")) {
-										tempAlly.slot4.cost.splice(tempAlly.slot4.cost.findIndex(e => {return e === "RANDOM"}), 1);
+								} else if (num < 0) {
+									for (let i = num; i < 0; i++) {
+										if (tempAlly.slot1.cost.includes("RANDOM")) {
+											console.log(tempAlly.slot1.cost);
+											let index = tempAlly.slot1.cost.findIndex(e => {return e === "RANDOM"});
+											console.log(index);
+											tempAlly.slot1.cost.splice(index, 1);
+											console.log(tempAlly.slot1.cost);
+										}
+										if (tempAlly.slot2.cost.includes("RANDOM")) {
+											tempAlly.slot2.cost.splice(tempAlly.slot2.cost.findIndex(e => {return e === "RANDOM"}), 1);
+										}
+										if (tempAlly.slot3.cost.includes("RANDOM")) {
+											tempAlly.slot3.cost.splice(tempAlly.slot3.cost.findIndex(e => {return e === "RANDOM"}), 1);
+										}
+										if (tempAlly.slot4.cost.includes("RANDOM")) {
+											tempAlly.slot4.cost.splice(tempAlly.slot4.cost.findIndex(e => {return e === "RANDOM"}), 1);
+										}
 									}
 								}
 							}
 						}
+						if (didChange) {
+							if (counter === 0) {
+								this.allyCostFlag1 = true;
+							} else if (counter === 1) {
+								this.allyCostFlag2 = true;
+							} else if (counter === 2) {
+								this.allyCostFlag3 = true;
+							}
+						}
 					}
+
+
+					newAllies.push(tempAlly);
 					
-					this.tempAllies.push(tempAlly);
+					counter++;
 				}
 			}
 		}
 
+		this.tempAllies = newAllies;
 		return this.tempAllies;
 	}
 
-	clickAbility(ability, parentPosition, abilityPosition) {
+	clickAbility(ally, pos) {
+		let ability;
+
+		if (pos == 1) {
+			ability = ally.slot1;
+		} else if (pos == 2) {
+			ability = ally.slot2;
+		} else if (pos == 3) {
+			ability = ally.slot3;
+		} else if (pos == 4) {
+			ability = ally.slot4;
+		}
+
+		let parentPosition = this.tempAllies.findIndex(c => {
+			c.id = ally.id;
+		})
+		let abilityPosition = this.getAbilityPosition(ally, pos);
+
 		if (this.abilityCurrentlyClicked) {
 			// can't click abilities twice
 			
@@ -711,12 +836,23 @@ export class ArenaComponent {
 			// TODO: 
 			// call for and show available targets
 			// currently just setting to all :///
+			console.log(dto);
 			this.sendTargetCheck(dto);
 		}
 	}
 
+	
+	getAbilityLocationCooldown(abilityLocation) : number  {
+		let entry = this.availableAbilities[abilityLocation];
+		if (entry < 0){
+			return -1 - entry;
+		} else {
+			return 0;
+		}
+	}
+
 	isAbilityLocationLocked(abilityLocation) : boolean  {
-		if (this.availableAbilities[abilityLocation] === -1){
+		if (this.availableAbilities[abilityLocation] < 0){
 			return true;
 		} else {
 			return false;
@@ -725,7 +861,7 @@ export class ArenaComponent {
 	
 	isTargetLocationLocked(charPos) : boolean  {
 		if (this.availableTargets.length > 0) {
-			if (this.availableTargets[charPos] === -1){
+			if (this.availableTargets[charPos] < 0){
 				return true;
 			} else {
 				return false;
@@ -740,10 +876,15 @@ export class ArenaComponent {
 		this.availableAbilities = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
 	}
 
-	getImageStyle(abilityLocation) {
+	getImageStyle(ally, pos) {
+		let abilityLocation = this.getAbilityPosition(ally, pos);
 		if (this.availableAbilities) {
 			if (this.isAbilityLocationLocked(abilityLocation)) {
-				return {'opacity': 0.2};
+				if (this.getAbilityLocationCooldown(abilityLocation) > 0) {
+					return {'opacity': 0.2};
+				} else {
+					return {'opacity': 0.2};
+				}
 			} else {
 				return {'opacity': 1};
 			}
@@ -834,6 +975,7 @@ export class ArenaComponent {
 			// dont hide 
 		} else {
 			this.hoveredAbility = null;
+			this.hoveredAbilityCooldown = null;
 			this.chosenAbility = null;
 		}
 	}
@@ -881,12 +1023,35 @@ export class ArenaComponent {
 		moveItemInArray(this.turnEffects, event.previousIndex, event.currentIndex);
 	}
 
+	getAbilityPosition(ally, num) {
+		let index = this.tempAllies.findIndex(c => {
+			c.id = ally.id;
+		})
+		return (index * 4) + (num - 1);
+	}
 
-	showAbilityInfo(ability) {
+	showAbilityInfo(ally, pos) {
+
+		let ability;
+
+		if (pos === 1) {
+			ability = ally.slot1;
+		} else if (pos === 2) {
+			ability = ally.slot2;
+		} else if (pos === 3) {
+			ability = ally.slot3;
+		} else if (pos === 4) {
+			ability = ally.slot4;
+		}
+
+		
+		let abilityPosition = this.getAbilityPosition(ally, pos);
+
 		if (this.abilityCurrentlyClicked) {
 			// dont mess with info already there
 		} else {
 			this.hoveredAbility = ability;
+			this.hoveredAbilityCooldown = this.getAbilityLocationCooldown(abilityPosition);
 		}
 	}
 
@@ -979,9 +1144,18 @@ export class ArenaComponent {
 	}
 
 	allyAbilitiesCosts() : Array<Array<String>> {
-		return this.alliedAbilities.map(x => {
+		let alliedAbilities = [];
+		for (let c of this.filterAllies()) {
+			alliedAbilities.push(c.slot1);
+			alliedAbilities.push(c.slot2);
+			alliedAbilities.push(c.slot3);
+			alliedAbilities.push(c.slot4);
+
+		};
+		console.log(alliedAbilities);
+		return alliedAbilities.map(x => {
 			return x.cost;
-		})
+		});
 	}
 
 	// TODO
@@ -989,12 +1163,13 @@ export class ArenaComponent {
 	// send ability id 
 	sendCostCheck() {
 		console.log("sending cost check");
+		let costs = this.allyAbilitiesCosts();
 
 		let costCheckDTO = {
-			allyCosts : this.allyAbilitiesCosts(),
+			allyCosts : costs,
 			chosenAbilities : this.chosenAbilities
 		}
-
+		console.log(costCheckDTO);
 		const payload = {
 			type: "COST_CHECK",
 			playerId: this.player.id,
@@ -1023,6 +1198,24 @@ export class ArenaComponent {
 				playerId: this.player.id,
 				spent: energySpent,
 				chosen: energyGained
+			})
+		)
+	}
+
+	areYouSure() {
+		this.showAreYouSure = true;
+	}
+
+	youreNotSure() {
+		this.showAreYouSure = false;
+	}
+
+	surrender() {
+		// just manually kill my team and send turn end
+		this.webSocket.send(
+			JSON.stringify({
+				type: "SURRENDER",
+				playerId: this.player.id
 			})
 		)
 	}
@@ -1115,6 +1308,10 @@ export class ArenaComponent {
 		this.availableTargets = [];
 		this.randomsNeeded = 0;
 		this.randomsAreNeeded = false;
+		this.allyCostFlag1 = false;
+		this.allyCostFlag2 = false;
+		this.allyCostFlag3 = false;
+		this.showAreYouSure = false;
 		this.stopAudio();
 	}
 
@@ -1131,7 +1328,7 @@ export class ArenaComponent {
 			console.log(msg);
 			if (mtp === "INIT") {
 				this.handleInitResponse(msg);
-				this.inBattle = true;
+				this.inBattle = this.arenaService.isInBattle();
 			} else if (mtp === "CCHECK") {
 				this.handleCostCheckResponse(msg);
 			} else if (mtp === "TCHECK") {
@@ -1140,6 +1337,8 @@ export class ArenaComponent {
 				this.handleEnergyTradeResponse(msg);
 			} else if (mtp === "END") {
 				this.handleTurnEndResponse(msg);
+			} else if (mtp === "SURRENDER") {
+				this.handleSurrenderResponse(msg);
 			} else {
 				if (msg !== "WAITING FOR OPPONENTS"){
 					console.log("UNRECOGNIZED");
@@ -1149,56 +1348,80 @@ export class ArenaComponent {
 	}
   
 	handleInitResponse(msg) {
-		this.isPlayerOne = msg.battle.playerIdOne === this.player.id;
-		this.battle = msg.battle;
-
+		this.arenaService.setIsPlayerOne(msg.battle.playerIdOne === this.player.id);
+		this.isPlayerOne = this.arenaService.getIsPlayerOne();
 		if (this.isPlayerOne){
 			this.player = msg.playerOne;
 			this.opponent = msg.playerTwo;
 
-			this.enemies.push(msg.characters[3]);
-			this.enemies.push(msg.characters[4]);
-			this.enemies.push(msg.characters[5]);
+			this.arenaService.setState(msg.battle, this.opponent);
+			this.inBattle = this.arenaService.isInBattle();
+			this.battle = this.arenaService.getCurrentBattle();
 
-			this.battleAllies = this.battle.playerOneTeam;
-			this.battleEnemies = this.battle.playerTwoTeam;
+			let holder : Array<Character> = new Array();
+			holder.push(msg.characters[3]);
+			holder.push(msg.characters[4]);
+			holder.push(msg.characters[5]);
+			this.arenaService.setEnemies(holder);
+			this.enemies = this.arenaService.getEnemies();
 
-			this.setTurnEnergy(this.battle.playerOneEnergy);
-			this.setSpentEnergy(this.newMap());
+			this.arenaService.setBattleAllies(this.battle.playerOneTeam);
+			this.battleAllies = this.arenaService.getBattleAllies();
+			this.arenaService.setBattleEnemies(this.battle.playerTwoTeam);
+			this.battleEnemies = this.arenaService.getBattleEnemies();
+
+			this.arenaService.setEnergy(this.battle.playerOneEnergy);
+			this.setTurnEnergy(this.arenaService.getEnergy());
+
+			this.arenaService.setSpent(this.newMap());
+			this.setSpentEnergy(this.arenaService.getSpent());
 			
 			if (this.battle.playerOneStart) {
-				this.hasTurn = true;
+				this.arenaService.setHasTurn(true);
+				this.hasTurn = this.arenaService.getHasTurn();
+			} else {
+				this.arenaService.setHasTurn(false);
+				this.hasTurn = this.arenaService.getHasTurn();
 			}
 		
 		} else {
 			this.player = msg.playerTwo;
 			this.opponent = msg.playerOne;
 
-			this.enemies.push(msg.characters[0]);
-			this.enemies.push(msg.characters[1]);
-			this.enemies.push(msg.characters[2]);
+			this.arenaService.setState(msg.battle, this.opponent);
+			this.inBattle = this.arenaService.isInBattle();
+			this.battle = this.arenaService.getCurrentBattle();
 
-			this.battleAllies = this.battle.playerTwoTeam;
-			this.battleEnemies = this.battle.playerOneTeam;
-			this.setTurnEnergy(this.battle.playerTwoEnergy);
-			this.setSpentEnergy(this.newMap());
+			let holder : Array<Character> = new Array();
+			holder.push(msg.characters[0]);
+			holder.push(msg.characters[1]);
+			holder.push(msg.characters[2]);
+			this.arenaService.setEnemies(holder);
+			this.enemies = this.arenaService.getEnemies();
+
+			this.arenaService.setBattleAllies(this.battle.playerTwoTeam);
+			this.battleAllies = this.arenaService.getBattleAllies();
+			this.arenaService.setBattleEnemies(this.battle.playerOneTeam);
+			this.battleEnemies = this.arenaService.getBattleEnemies();
+
+			this.arenaService.setEnergy(this.battle.playerTwoEnergy);
+			this.setTurnEnergy(this.arenaService.getEnergy());
+
+			this.arenaService.setSpent(this.newMap());
+			this.setSpentEnergy(this.arenaService.getSpent());
 
 			if (!this.battle.playerOneStart) {
-				this.hasTurn = true;
+				this.arenaService.setHasTurn(true);
+				this.hasTurn = this.arenaService.getHasTurn();
+			} else {
+				this.arenaService.setHasTurn(false);
+				this.hasTurn = this.arenaService.getHasTurn();
 			}
 		}
 
-
-		for (let c of this.allies) {
-			this.allyPortraits.set(c.id, c.avatarUrl);
-			this.alliedAbilities.push(c.slot1);
-			this.alliedAbilities.push(c.slot2);
-			this.alliedAbilities.push(c.slot3);
-			this.alliedAbilities.push(c.slot4);
-		}
-		for (let c of this.enemies) {
-			this.enemyPortraits.set(c.id, c.avatarUrl);
-		}
+		console.log(this.allies);
+		this.arenaService.setTempAllies(Object.create(this.allies));
+		this.tempAllies = this.arenaService.getTempAllies();
 
 		if (this.hasTurn) {
 			this.sendCostCheck();
@@ -1208,16 +1431,22 @@ export class ArenaComponent {
 
 	}
 
+
 	handleEnergyTradeResponse(msg) {
 		// TODO
 		console.log("GOT ENERGY TRADE RESPONSE");
-		let battle = msg.battle;
+		this.arenaService.setBattle(msg.battle);
+		this.battle = this.arenaService.getCurrentBattle();
 		if (this.isPlayerOne) {
-			this.setTurnEnergy(battle.playerOneEnergy);
+			this.arenaService.setEnergy(this.battle.playerOneEnergy)
+			this.setTurnEnergy(this.arenaService.getEnergy());
 		} else {
-			this.setTurnEnergy(battle.playerTwoEnergy);
+			this.arenaService.setEnergy(this.battle.playerTwoEnergy)
+			this.setTurnEnergy(this.arenaService.getEnergy());
 		}
-		this.setSpentEnergy(this.newMap());
+		
+		this.arenaService.setSpent(this.newMap());
+		this.setSpentEnergy(this.arenaService.getSpent());
 		this.energyTrade = null;
 		// do another cost check 
 		this.sendCostCheck();
@@ -1239,6 +1468,28 @@ export class ArenaComponent {
 		//TODO
 		// recieve message from backend, and highlight appropriate available targets
 	}
+	
+
+	handleSurrenderResponse(msg) {
+		let victory;
+		console.log("GOT SURRENDER RESPONSE");
+		if (this.player.id === msg.playerId) {
+			victory = false;
+			this.arenaService.setState(null, null);
+		} else {
+			victory = true;
+			this.arenaService.setState(null, null);
+		}
+		
+		if(victory) {
+			this.playAudio("victory");
+			alert("YOU HAVE WON");
+		} else {
+			this.playAudio("loss");
+			alert("YOU HAVE LOST");
+		}
+	}
+  
   
 	// this is where we "START our turn", but we have to resolve a lot of stuff from backend first
 	handleTurnEndResponse(msg) {
@@ -1269,26 +1520,42 @@ export class ArenaComponent {
 			}
 		}
 
-		this.hasTurn = !this.hasTurn;
-		this.battle = msg.battle;
+		this.arenaService.setHasTurn(!this.hasTurn);
+		this.hasTurn = this.arenaService.getHasTurn();
+		this.arenaService.setBattle(msg.battle);
+		this.battle = this.arenaService.getCurrentBattle();
+
 
 		if (this.isPlayerOne) {
-			this.setTurnEnergy(this.battle.playerOneEnergy);
-			this.setSpentEnergy(this.newMap());
-			this.refreshTradeState();
+			this.arenaService.setBattleAllies(this.battle.playerOneTeam);
+			this.battleAllies = this.arenaService.getBattleAllies();
+			this.arenaService.setBattleEnemies(this.battle.playerTwoTeam);
+			this.battleEnemies = this.arenaService.getBattleEnemies();
 
-			this.battleAllies = this.battle.playerOneTeam;
-			this.battleEnemies = this.battle.playerTwoTeam;
+			this.arenaService.setEnergy(this.battle.playerOneEnergy);
+			this.setTurnEnergy(this.arenaService.getEnergy());
+
+			this.arenaService.setSpent(this.newMap());
+			this.setSpentEnergy(this.arenaService.getSpent());
+			this.refreshTradeState();
 
 		} else {
-			this.setTurnEnergy(this.battle.playerTwoEnergy);
-			this.setSpentEnergy(this.newMap());
-			this.refreshTradeState();
+			this.arenaService.setBattleAllies(this.battle.playerTwoTeam);
+			this.battleAllies = this.arenaService.getBattleAllies();
+			this.arenaService.setBattleEnemies(this.battle.playerOneTeam);
+			this.battleEnemies = this.arenaService.getBattleEnemies();
 
-			this.battleAllies = this.battle.playerTwoTeam;
-			this.battleEnemies = this.battle.playerOneTeam;
+			this.arenaService.setEnergy(this.battle.playerTwoEnergy);
+			this.setTurnEnergy(this.arenaService.getEnergy());
+
+			this.arenaService.setSpent(this.newMap());
+			this.setSpentEnergy(this.arenaService.getSpent());
+			this.refreshTradeState();
 		}
 
+		if (!this.hasTurn) {
+			this.filterAllies();
+		}
 		console.log(this.battleAllies);
 		console.log(this.battleEnemies);
 
@@ -1297,6 +1564,7 @@ export class ArenaComponent {
 		for(let instance of this.battleAllies) {
 			if (!instance.dead) {
 				defeat = false;
+				this.arenaService.setState(null, null);
 			}
 		}
 		
@@ -1304,6 +1572,7 @@ export class ArenaComponent {
 		for(let instance of this.battleEnemies) {
 			if (!instance.dead) {
 				victory = false;
+				this.arenaService.setState(null, null);
 			}
 		}
 		if(defeat) {

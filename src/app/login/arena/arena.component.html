@@ -1,10 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <div id="battleDiv">
 
-  <div *ngIf="!inBattle" id="pre-battle">
+  <div *ngIf="!inBattle && !webSocket" id="pre-battle">
 
     <div>
       <div class="playerInfo">
         <img [src]="player.avatarUrl" id="player-portrait">
+        <br>
         {{ player.displayName }}
       </div>
 
@@ -22,12 +38,12 @@
         <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
       </div>
     </div>
-    <div id="character-select">
-      <img *ngFor="let char of allCharacters" (click)="addCharacter(char.id)" [src]="char.avatarUrl" class="ally-portrait-small">
+    <div id="character-select" *ngIf="allCharacters">
+      <img *ngFor="let char of allCharacters" (click)="addCharacter(char.id)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
       <div>
         TEAM:
       </div>
-      <img *ngFor="let ally of allies" [src]="ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
+      <img *ngFor="let ally of allies" [src]="imgPrefix + ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
     </div>
   </div>
 
@@ -36,6 +52,7 @@
 
       <div class="playerInfo">
         <img [src]="player.avatarUrl" id="player-portrait">
+        <br>
         {{ player.displayName }}
       </div>
 
@@ -45,61 +62,89 @@
             <countdown [config]="config" (event)="handleTimerEvent($event)">
   
             </countdown>
+            <div id="volumeControls">
+              <input type="range" id="volume" min="0" max="1.0" step="0.1" value="0.5" [(ngModel)]="volume">
+              <fa-icon [icon]="faVolumeUp"></fa-icon>
+            </div>
           </div>
+
           <div *ngIf="hasTurn" id="energy">
             
             <div id="energy-pool">
-              <div class="left-text">ENERGY TOTAL: {{ totalEnergy }}</div>
-              <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy, false)" class="energy-strength energy"></div>
-              <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy, false)" class="energy-dexterity energy"></div>
-              <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy, false)" class="energy-arcana energy"></div>
-              <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy, false)" class="energy-divinity energy"></div>
+              <div class="left-text">TOTAL ENERGY: {{ totalEnergy }}</div>
+              <span id="turn-divinity">
+                <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy, false)" class="energy-divinity energy"></div>
+              </span>
+              <span id="turn-arcana">
+                <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy, false)" class="energy-arcana energy"></div>
+              </span>
+              <span id="turn-dexterity">
+                <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy, false)" class="energy-dexterity energy"></div>
+              </span>
+              <span id="turn-strength">
+                <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy, false)" class="energy-strength energy"></div>
+              </span>
             </div>
             
             <br>
 
             <div id="spent">
-              <div class="left-text">SPENT TOTAL: {{ totalSpentEnergy }}</div>
-              <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy, false)" class="energy-strength energy"></div>
-              <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy, false)" class="energy-dexterity energy"></div>
-              <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy, false)" class="energy-arcana energy"></div>
-              <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy, false)" class="energy-divinity energy"></div>
+              <div *ngIf="totalSpentEnergy > 0" class="left-text">TOTAL SPENT: {{ totalSpentEnergy }}</div>
+              <span id="spent-divinity">
+                <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy, false)" class="energy-divinity energy"></div>
+              </span>
+              
+              <span id="spent-arcana">
+                <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy, false)" class="energy-arcana energy"></div>
+              </span>
+              
+              <span id="spent-dexterity">
+                <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy, false)" class="energy-dexterity energy"></div>
+              </span>
+              
+              <span id="spent-strength">
+                <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy, false)" class="energy-strength energy"></div>
+              </span>
             </div>
 
-            <br>
-
-
-            <div id="randoms">
-              <div > {{ randomsNeeded }} MORE ENERGY NEEDED</div>
-            </div>
+            <span *ngIf="randomsNeeded > 0"> {{ randomsNeeded }} MORE ENERGY NEEDED</span>
             
           </div>
 
-          <br>
-
           <div id="actionsHeader">
-            <button (click)="clickEnergyTrade()" [disabled]="!hasTurn || abilitiesAreChosen()">
-              Trade
-            </button>
-            <button (click)="sendTurnEnd()" [disabled]="!hasTurn">
-              Finish Turn
-            </button>
-            <div>
-              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="strengthTrade" value="STRENGTH">
-              <div class="energy energy-strength"></div>
-              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="dexterityTrade" value="DEXTERITY">
-              <div class="energy energy-dexterity"></div>
-              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="arcanaTrade" value="ARCANA">
-              <div class="energy energy-arcana"></div>
+            <div *ngIf="hasTurn">
               <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="divinityTrade" value="DIVINITY">
               <div class="energy energy-divinity"></div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="arcanaTrade" value="ARCANA">
+              <div class="energy energy-arcana"></div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="dexterityTrade" value="DEXTERITY">
+              <div class="energy energy-dexterity"></div>
+              <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="strengthTrade" value="STRENGTH">
+              <div class="energy energy-strength"></div>
+            </div>
+            <br>
+            <div>
+              <button (click)="clickEnergyTrade()" [disabled]="!hasTurn || abilitiesAreChosen()">
+                Trade
+              </button>
+              <button (click)="sendTurnEnd()" [disabled]="!hasTurn">
+                Finish Turn
+              </button>
+              <input type="button" id="surrender" (click)="this.areYouSure()" value="SURRENDER" >
+              <span *ngIf="showAreYouSure">
+                <input type="button" id="surrenderImSure" (click)="this.surrender()" value="I'M SURE" >
+              </span>
+              <span *ngIf="showAreYouSure">
+                <input type="button" id="surrenderImNotSure" (click)="this.youreNotSure()" value="NO WAY" >
+              </span>
             </div>
           </div>
       </div>
 
       <div id="opponentInfo">
-        {{ opponent.displayName }}
         <img [src]="opponent.avatarUrl" id="opponent-portrait">
+        <br>
+        {{ opponent.displayName }}
       </div>
     </div>
 
@@ -108,7 +153,7 @@
           <div class="ally-info">
             <div *ngFor="let ally of battleAllies" class="battle-allies">
               <div class="ally-info-portrait">
-                <img [ngStyle]="getImageStyleCharacter(ally.position)" [src]="allyPortraits.get(ally.characterId)" class="ally-portrait" (click)="clickTarget(ally.position)">        
+                <img [ngStyle]="getImageStyleCharacter(ally.position)" [src]="this.imgPrefix + (ally.characterId | findPortrait)" class="ally-portrait" (click)="clickTarget(ally.position)">        
                 <div>
                   {{ ally.hp }} / 100
                 </div>
@@ -127,18 +172,18 @@
           </div>
           
           <div class="abilities">
-            <div *ngFor="let ally of filterAllies()" class="ally-abilities">
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot1)" (click)="clickAbility(ally.slot1, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 0)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 0)" [src]="imgPrefix + ally.slot1.abilityUrl" class="ally-ability-portrait">
+            <div *ngFor="let ally of tempAllies" class="ally-abilities">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 1)" (click)="clickAbility(ally, 1)">
+                <img [ngStyle]="getImageStyle(ally, 1)" [src]="imgPrefix + ally.slot1.abilityUrl" class="ally-ability-portrait">
               </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot2)" (click)="clickAbility(ally.slot2, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 1)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 1)" [src]="imgPrefix + ally.slot2.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 2)" (click)="clickAbility(ally, 2)">
+                <img [ngStyle]="getImageStyle(ally, 2)" [src]="imgPrefix + ally.slot2.abilityUrl" class="ally-ability-portrait">
               </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot3)" (click)="clickAbility(ally.slot3, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 2)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 2)" [src]="imgPrefix + ally.slot3.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 3)" (click)="clickAbility(ally, 3)">
+                <img [ngStyle]="getImageStyle(ally, 3)" [src]="imgPrefix + ally.slot3.abilityUrl" class="ally-ability-portrait">
               </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally.slot4)" (click)="clickAbility(ally.slot4, allies.indexOf(ally), (allies.indexOf(ally) * 4) + 3)">
-                <img [ngStyle]="getImageStyle((allies.indexOf(ally) * 4) + 3)" [src]="imgPrefix + ally.slot4.abilityUrl" class="ally-ability-portrait">
+              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 4)" (click)="clickAbility(ally, 4)">
+                <img [ngStyle]="getImageStyle(ally, 4)" [src]="imgPrefix + ally.slot4.abilityUrl" class="ally-ability-portrait">
               </div>
             </div>
           </div>
@@ -155,7 +200,7 @@
               </div>
 
               <div class="enemy-info-portrait">
-                <img [ngStyle]="getImageStyleCharacter(enemy.position)" [src]="enemyPortraits.get(enemy.characterId)" (click)="clickTarget(enemy.position)" class="enemy-portrait">
+                <img [ngStyle]="getImageStyleCharacter(enemy.position)" [src]="this.imgPrefix + (enemy.characterId | findPortrait)"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
                 <div>
                   {{ enemy.hp }} / 100
                 </div>
@@ -168,9 +213,8 @@
     </div>
 
     <div id="footer">
+
       <div id="abilityWindow">
-
-
 
         <div id="abilityInfo">
           <div *ngIf="hoveredAbility">
@@ -182,8 +226,10 @@
             <div *ngFor="let energy of hoveredAbility.cost" id="abilityCost" [class]="energy">
             </div>
             <span>{{ hoveredAbility.name }}</span>
+            <span id="abilityTargets">Targets: {{ hoveredAbility.targets }}</span>
             <br>
-            <span>Cooldown: {{ hoveredAbility.cooldown }}</span>
+            <span>Cooldown: {{ hoveredAbilityCooldown }} /  {{ hoveredAbility.cooldown }}</span>
+            <span id="abilityTypes">{{ hoveredAbility.types }}</span>
             <br>
             <span>{{ hoveredAbility.description }}</span>
             <br>
@@ -204,7 +250,6 @@
 
       </div>
     </div>
-
 
   </div>
 </div>

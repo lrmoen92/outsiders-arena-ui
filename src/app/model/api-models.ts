@@ -53,6 +53,9 @@ export class Ability {
     name : string;
     abilityUrl : string;
     description : string;
+    cleanCost : string;
+    targets : string;
+    types : string;
     cost : Array<string>;
     selfEffects : Array<Effect>;
     enemyEffects : Array<Effect>;

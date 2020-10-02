@@ -12,8 +12,6 @@ export class AppComponent implements OnInit {
 	httpClient : HttpClient;
 	
 	title : string = 'outsiders-arena-ui';
-	
-	allCharacters : Array<Character> = [];
 
   constructor(httpClient : HttpClient) {
     this.httpClient = httpClient;
@@ -21,18 +19,6 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
 
-    this.httpClient.get(URLS.characters).subscribe(
-      x => {
-        console.log(x);
-        this.allCharacters = <any[]> x;
-      },
-      y => {
-
-      },
-      () => {
-
-      }
-    );
   }
 
 

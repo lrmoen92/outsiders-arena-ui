@@ -40,10 +40,6 @@ img {
     width : 100%;
 }
 
-#randoms {
-    width : 100%;
-}
-
 .left-text {
     float : left;
 }
@@ -81,7 +77,8 @@ img {
     border-radius : 2px;
     border-style : solid;
     border-color : black;
-    background-color : mediumseagreen;
+    /* background-color : mediumseagreen; */
+    background-color : gold;
     
 }
 
@@ -127,7 +124,8 @@ img {
 }
 
 .energy-dexterity {
-    background-color : mediumseagreen;
+    /* background-color : mediumseagreen; */
+    background-color : gold;
 }
 
 .energy-arcana {
@@ -306,19 +304,46 @@ img {
     position : fixed;
     top : 30%;
     width : 80%;
-    height : 50%;
+    height : 40%;
 }
 
 /* FOOTER */
+
+#surrender {
+
+}
+
+#surrenderImSure {
+    float : right;
+}
+
+#surrenderImNotSure {
+    float : right;
+}
+
+#volume {
+    width : 50%;
+}
+
+#volumeControls {
+    float : right;
+    padding-right : 10%;
+}
 
 #footer {
     position : fixed;
     top : 80%;
     width : 80%;
-    height : 20%;
+    height : 30%;
 }
 
+#abilityTargets{
+    float : right;
+}
 
+#abilityTypes{
+    float : right;
+}
 
 #actionsHeader {
     float : left;

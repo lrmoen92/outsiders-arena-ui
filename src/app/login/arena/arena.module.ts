@@ -7,6 +7,9 @@ import { FormsModule, ReactiveFormsModule }   from '@angular/forms';
 
 import { CountdownModule } from 'ngx-countdown';
 import { ArenaComponent } from './arena.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { CharacterService } from '../character/character.service';
+import { LoginService } from '../login.service';
 
 
 @NgModule({
@@ -20,9 +23,11 @@ import { ArenaComponent } from './arena.component';
     FormsModule,
     ReactiveFormsModule,
     DragDropModule,
-    MatTooltipModule
+    MatTooltipModule,
+    FontAwesomeModule
   ],
-  providers: [],
+  providers: [
+  ],
   bootstrap: [ArenaComponent]
 })
 export class ArenaModule { }

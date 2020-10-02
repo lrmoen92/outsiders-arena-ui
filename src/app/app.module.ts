@@ -14,13 +14,32 @@ import { LoginComponent } from './login/login.component';
 import { NavComponent } from './nav/nav.component';
 import { ArenaComponent } from './login/arena/arena.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { RouterModule, Routes } from '@angular/router';
+import { CharacterComponent } from './login/character/character.component';
+import { MissionComponent } from './login/mission/mission.component';
+import { HomeComponent } from './login/home/home.component';
+import { CharacterService } from './login/character/character.service';
+import { LoginService } from './login/login.service';
+import { ArenaService } from './login/arena/arena.service';
+import { PortraitPipe } from './utils/portrait.pipe';
+
+
+const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'arena', component: ArenaComponent },
+  { path: 'mission', component: MissionComponent },
+  { path: 'character', component: CharacterComponent }
+  // { path: '**', component: PageNotFoundComponent },  // Wildcard route for a 404 page
+];
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     NavComponent,
-    ArenaComponent
+    ArenaComponent,
+    PortraitPipe
   ],
   imports: [
     BrowserModule,
@@ -31,11 +50,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     ReactiveFormsModule,
     DragDropModule,
     BrowserAnimationsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    FontAwesomeModule,
+    RouterModule.forRoot(routes)
   ],
-  providers: [],
+  providers: [
+  ],
   bootstrap: [
     AppComponent
-  ]
+  ],
+  exports: [RouterModule]
 })
 export class AppModule { }
