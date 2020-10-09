@@ -9,14 +9,7 @@ export class Character {
     id : Number;
     avatarUrl : string;
     name : string;
-    slot1 : Ability;
-    slot2 : Ability;
-    slot3 : Ability;
-    slot4 : Ability;
-    slota : Ability;
-    slotb : Ability;
-    slotc : Ability;
-    slotd : Ability;
+    abilities : Array<Ability>;
 }
 
 export class CharacterInstance {
@@ -34,7 +27,6 @@ export class AbilityTargetDTO {
     ability : Ability;
     characterPosition: Number;
     targetPositions : Array<Number>;
-    abilityPosition : Number;
 }
 
 export class BattleTurnDTO {

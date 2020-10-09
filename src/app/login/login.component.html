@@ -1,4 +1,4 @@
-<div *ngIf="!loggedIn" id="splashscreen">
+<div id="splashscreen">
     <input [(ngModel)]="playerName" placeholder="Display Name"/>
     <input [(ngModel)]="playerAvatarUrl" placeholder="Avatar URL"/>
     <br />
@@ -6,16 +6,3 @@
         LOGIN
     </button>
 </div>
-
-
-<div *ngIf="loggedIn" >
-    <router-outlet>
-
-    </router-outlet>
-</div>
-
-<!-- <arena-root *ngIf="loggedIn"
-            [allCharacters]="allCharacters"
-            [player]="player">
-
-</arena-root> -->

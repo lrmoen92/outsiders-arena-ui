@@ -3,13 +3,19 @@ NAV COMPONENT
     <div>
         <button (click)="goHome()" >HOME</button>
     </div>
-    <div>
+    <div *ngIf="loggedIn" >
+        <button (click)="goLogout()" >LOGOUT</button>
+    </div>
+    <div *ngIf="!loggedIn" >
+        <button (click)="goLogin()" >LOGIN</button>
+    </div>
+    <div *ngIf="loggedIn" >
         <button (click)="goArena()" >ARENA</button>
     </div>
-    <div>
+    <div *ngIf="loggedIn" >
         <button (click)="goMissions()" >MISSIONS</button>
     </div>
-    <div>
+    <div *ngIf="loggedIn" >
         <button (click)="goCharacters()" >CHARACTERS</button>
     </div>
 </div>

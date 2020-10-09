@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Player, Character } from '../model/api-models';
-import { URLS } from '../utils/constants';
-import { Router } from '@angular/router';
+import { Player } from '../model/api-models';
 import { LoginService } from './login.service';
+import { CharacterService } from '../character/character.service';
+import { LoginStore } from './login.store';
+import { CharacterStore } from '../character/character.store';
 
 @Component({
   selector: 'login-root',
@@ -13,18 +14,16 @@ import { LoginService } from './login.service';
 export class LoginComponent {
 
   httpClient : HttpClient;
-  
-  loggedIn : Boolean = false;
 
   playerName : string;
   playerAvatarUrl : string;
 
   createPlayerButton_disabled : Boolean = false;
-  service: LoginService;
+  loginStore : LoginStore;
 
-  constructor(httpClient : HttpClient, service : LoginService) {
+  constructor(httpClient : HttpClient, loginStore : LoginStore) {
     this.httpClient = httpClient;
-    this.service = service;
+    this.loginStore = loginStore;
   }
 
     
@@ -37,19 +36,18 @@ export class LoginComponent {
         "displayName": disp,
         "avatarUrl": aurl
     };
-    this.service.getPlayer(req).subscribe(
-      x => {
-        this.service.setPlayer(<Player> x);
-      },
-      y => {
+    this.loginStore.loginPlayer(req);
+    // .subscribe(
+    //   x => {
+    //     this.service.setPlayer(<Player> x);
+    //   },
+    //   y => {
 
-      },
-      () => {
-        this.loggedIn = this.service.isLoggedIn();
-        console.log("Player logged in");
-
-      }
-    )
+    //   },
+    //   () => {
+        
+    //   }
+    // )
   };
 
 }

@@ -1,21 +1,7 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <div id="battleDiv">
 
-  <div *ngIf="!inBattle && !webSocket" id="pre-battle">
+  <div *ngIf="!inBattle" id="pre-battle">
 
     <div>
       <div class="playerInfo">
@@ -153,7 +139,7 @@
           <div class="ally-info">
             <div *ngFor="let ally of battleAllies" class="battle-allies">
               <div class="ally-info-portrait">
-                <img [ngStyle]="getImageStyleCharacter(ally.position)" [src]="this.imgPrefix + (ally.characterId | findPortrait)" class="ally-portrait" (click)="clickTarget(ally.position)">        
+                <img [ngStyle]="getCharacterStyle(ally.position)" [src]="this.imgPrefix + (ally.characterId | findPortrait)" class="ally-portrait" (click)="clickTarget(ally.position)">        
                 <div>
                   {{ ally.hp }} / 100
                 </div>
@@ -166,24 +152,13 @@
                   </span>
                 </span>
               </div>
-              
-
             </div>
           </div>
           
           <div class="abilities">
             <div *ngFor="let ally of tempAllies" class="ally-abilities">
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 1)" (click)="clickAbility(ally, 1)">
-                <img [ngStyle]="getImageStyle(ally, 1)" [src]="imgPrefix + ally.slot1.abilityUrl" class="ally-ability-portrait">
-              </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 2)" (click)="clickAbility(ally, 2)">
-                <img [ngStyle]="getImageStyle(ally, 2)" [src]="imgPrefix + ally.slot2.abilityUrl" class="ally-ability-portrait">
-              </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 3)" (click)="clickAbility(ally, 3)">
-                <img [ngStyle]="getImageStyle(ally, 3)" [src]="imgPrefix + ally.slot3.abilityUrl" class="ally-ability-portrait">
-              </div>
-              <div class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ally, 4)" (click)="clickAbility(ally, 4)">
-                <img [ngStyle]="getImageStyle(ally, 4)" [src]="imgPrefix + ally.slot4.abilityUrl" class="ally-ability-portrait">
+              <div *ngFor="let ability of ally.abilities" class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ability)" (click)="clickAbility(ability)">
+                <img [ngStyle]="ability | abilityPipe" [src]="imgPrefix + ability.abilityUrl" class="ally-ability-portrait">
               </div>
             </div>
           </div>
@@ -200,7 +175,7 @@
               </div>
 
               <div class="enemy-info-portrait">
-                <img [ngStyle]="getImageStyleCharacter(enemy.position)" [src]="this.imgPrefix + (enemy.characterId | findPortrait)"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
+                <img [ngStyle]="getCharacterStyle(enemy.position)" [src]="this.imgPrefix + (enemy.characterId | findPortrait)"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
                 <div>
                   {{ enemy.hp }} / 100
                 </div>

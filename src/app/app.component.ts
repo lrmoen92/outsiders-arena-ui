@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Character } from './model/api-models';
-import { URLS } from './utils/constants';
+import { CharacterService } from './character/character.service';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -9,17 +9,18 @@ import { URLS } from './utils/constants';
 })
 export class AppComponent implements OnInit {
 
-	httpClient : HttpClient;
+  httpClient : HttpClient;
+  characterService : CharacterService;
 	
 	title : string = 'outsiders-arena-ui';
 
-  constructor(httpClient : HttpClient) {
+  constructor(httpClient : HttpClient, characterService: CharacterService) {
     this.httpClient = httpClient;
+    this.characterService = characterService;
   }
 
   ngOnInit() {
-
+    
   }
-
 
 }

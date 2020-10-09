@@ -1,25 +1,45 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Input, } from '@angular/core';
+import { Component, OnInit, } from '@angular/core';
 import { Router } from '@angular/router';
-import { Character } from '../model/api-models';
+import { LoginStore } from '../login/login.store';
 
 @Component({
   selector: 'nav-root',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.css']
 })
-export class NavComponent {
+export class NavComponent implements OnInit {
 
   router : Router;
   httpClient: HttpClient;
+  loginStore : LoginStore;
+  
+  loggedIn: Boolean;
 
-  constructor(httpClient : HttpClient, router : Router) {
+  constructor(httpClient : HttpClient, router : Router, loginStore : LoginStore) {
     this.httpClient = httpClient;
     this.router = router;
-	}
+    this.loginStore = loginStore;
+  }
+  
+  ngOnInit() {
+    this.loginStore.getLoggedIn().subscribe(x => {
+      this.loggedIn = x;
+      this.goHome();
+    });
+  }
 
   goHome(){
     this.router.navigate(['/'])
+  }
+
+  goLogout(){
+    this.loginStore.logoutPlayer();
+    this.router.navigate(['home'])
+  }
+
+  goLogin(){
+    this.router.navigate(['login'])
   }
 
   goArena(){
