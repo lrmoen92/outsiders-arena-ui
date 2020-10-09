@@ -11,15 +11,7 @@ export class AbilityPipe implements PipeTransform {
     }
 
   transform(ability: Ability) {
-    return this.getAbilityStyle(ability);
-  }
 
-  getAbilityStyle(ability) {
-		if (this.arenaService.isAbilityLocked(ability)) {
-			return {'opacity': 0.2};
-		} else {
-			return {'opacity': 1};
-		}
   }
 
 }

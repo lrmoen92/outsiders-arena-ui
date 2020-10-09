@@ -282,22 +282,7 @@ export class ArenaComponent implements OnInit {
 		// force turn end and clean up
 		if (this.hasTurn) {
 			if (this.randomsNeeded > 0) {
-				if (this.totalSpentEnergy > 0) {
-					if (this.isPlayerOne) {
-						this.setTurnEnergy(this.battle.playerOneEnergy);
-					} else {
-						this.setTurnEnergy(this.battle.playerTwoEnergy);
-					}
-					this.setSpentEnergy(this.newMap());
-					this.refreshTradeState();
-				}
-				this.chosenAbilities = [];
-				// filter out dtos from turn effects
-				this.turnEffects.forEach((value, index, array) => {
-					if (value.instanceId === -1) {
-						array.splice(index);
-					}
-				});
+				this.clearAbilities();
 				this.clearSelection(true);
 			}
 			this.sendTurnEndMessage();
@@ -359,8 +344,8 @@ export class ArenaComponent implements OnInit {
 		let oldVal2 = temp2[energy]
 		temp2[energy] = oldVal2 + 1;
 
-		this.setTurnEnergy(temp);
-		this.setSpentEnergy(temp2);
+		this.arenaStore.setTurnEnergy(temp);
+		this.arenaStore.setSpentEnergy(temp2);
 	}
 
 	// only for refunding abilities I guess
@@ -407,8 +392,8 @@ export class ArenaComponent implements OnInit {
 				let oldVal2 = temp2[energy]
 				temp2[energy] = oldVal2 - 1;
 	
-				this.setTurnEnergy(temp);
-				this.setSpentEnergy(temp2);
+				this.arenaStore.setTurnEnergy(temp);
+				this.arenaStore.setSpentEnergy(temp2);
 			}
 		}
 	}
@@ -612,8 +597,13 @@ export class ArenaComponent implements OnInit {
 		this.tempAllies = newAllies;
 	  }
 
-
-
+	  getCharacterPosition(string) {
+		  this.allyAbilities().forEach((x, y, z) => {
+			  if (x.name === string) {
+				return y + (this.isPlayerOne ? 0 : 3);
+			  }
+		  })
+	  }
 
 	clickAbility(ability) {
 
@@ -624,13 +614,16 @@ export class ArenaComponent implements OnInit {
 		} else if(this.totalSpentEnergy > 0 && !this.abilitiesAreChosen()) {
 			alert("Finish your energy trade or put your spent energy back before choosing abilities!")
 		} else {
-			this.chosenAbility = ability;
+			this.arenaStore.setChosenAbility(ability)
+			this.arenaStore.setActiveCharacterPosition(this.getCharacterPosition(ability.name));
+			this.abilityCurrentlyClicked = true;
 			this.sendTargetCheck();
 		}
 	}
-
 	
-
+	isAbilityLocked(ability) {
+		return this.getAbilityCooldown(ability) < 0;
+	}
 	
 	getAbilityCooldown(ability) : number  {
 		let entry = this.availableAbilities.get(ability.name);
@@ -659,6 +652,13 @@ export class ArenaComponent implements OnInit {
 	}
 
 
+	getAbilityStyle(ability) {
+		if (this.isAbilityLocked(ability)) {
+			return {'opacity': 0.2};
+		} else {
+			return {'opacity': 1};
+		}
+  }
 
 	getCharacterStyle(characterPosition) {
 		if (this.availableTargets) {
@@ -698,14 +698,12 @@ export class ArenaComponent implements OnInit {
 				tarArray.push(targetLocation);
 			}
 
+			this.arenaStore.confirmAbility(this.chosenAbility, tarArray, this.activeCharacterPosition, this.chosenAbilities);
 
-			this.arenaStore.confirmAbility(this.chosenAbility, tarArray, this.activeCharacterPosition);
-			
-
-			// update Energy and call cost check again
-			// be sure to add randoms needed to spent total to get true energy total for cost check
+			// add ability to UI
+			this.addAbilityToReel(this.chosenAbility);
+			this.clearSelection(false);
 			this.sendCostCheck();
-			// update random count needed to finish turn
 		} else {
 			// TODO:
 			// clicking targets should show character blurb normally (duh)
@@ -725,16 +723,26 @@ export class ArenaComponent implements OnInit {
 		this.hideAbilityPanel(force);
 	}
 
-	hideAbilityPanel(force) {
-		// check if ability was clicked but no target chosen
-		if (this.abilityCurrentlyClicked && !force) {
-			// dont hide 
-		} else {
-			this.hoveredAbility = null;
-			this.hoveredAbilityCooldown = null;
-			this.chosenAbility = null;
+	clearAbilities() {
+		if (this.totalSpentEnergy > 0) {
+		  if (this.isPlayerOne) {
+			this.arenaStore.setTurnEnergy(this.battle.playerOneEnergy);
+		  } else {
+			this.arenaStore.setTurnEnergy(this.battle.playerTwoEnergy);
+		  }
+		  this.arenaStore.setSpentEnergy(this.newMap());
+		  this.refreshTradeState();
 		}
-	}
+		this.arenaStore.setChosenAbilities([]);
+		// filter out dtos from turn effects
+
+		this.arenaStore.setTurnEffects(
+			this.turnEffects.filter( x => {
+				x.instanceId !== -1;
+			})
+		);
+	  }
+
 
 	// even though they're shown on the same reel,
 	// ordering effects and dummyEffects act independently
@@ -748,7 +756,8 @@ export class ArenaComponent implements OnInit {
 		tempEffect.avatarUrl = ability.abilityUrl;
 		tempEffect.name = ability.name;
 		this.turnEffects.push(tempEffect);
-		this.activeCharacterPosition = -1;
+		this.arenaStore.setTurnEffects(this.turnEffects);
+		this.arenaStore.setActiveCharacterPosition(-1);
 	}
 
 	removeAbilityFromReel(effect : BattleEffect) {
@@ -760,10 +769,14 @@ export class ArenaComponent implements OnInit {
 			let ability = this.chosenAbilities[index].ability;
 			var index2 = this.turnEffects.findIndex(e => (e.instanceId < 0 && e.name === effect.name));
 	
-			this.arenaStore.removeAbilityFromReel(ability, index, index2);
-			this.sendCostCheck();
+			this.refundCostTemporary(ability);
+			this.chosenAbilities.splice(index, 1);
+			this.turnEffects.splice(index2, 1);
+			this.arenaStore.setChosenAbilities(this.chosenAbilities);
+			this.arenaStore.setTurnEffects(this.turnEffects);
 		}
 	}
+
 
 	drop(event: CdkDragDrop<string[]>) {
 		moveItemInArray(this.turnEffects, event.previousIndex, event.currentIndex);
@@ -774,12 +787,21 @@ export class ArenaComponent implements OnInit {
 		if (this.abilityCurrentlyClicked) {
 			// dont mess with info already there
 		} else {
-			this.arenaStore.setHoveredAbility();
 			this.hoveredAbility = ability;
 			this.hoveredAbilityCooldown = this.getAbilityCooldown(ability);
 		}
 	}
 
+	hideAbilityPanel(force) {
+		// check if ability was clicked but no target chosen
+		if (this.abilityCurrentlyClicked && !force) {
+			// dont hide 
+		} else {
+			this.hoveredAbility = null;
+			this.hoveredAbilityCooldown = null;
+			this.chosenAbility = null;
+		}
+	}
 
 	// ======================================================================================================================
 	// ------ EFFECTS -------------------------------------------------------------------------------------------------------
@@ -860,23 +882,13 @@ export class ArenaComponent implements OnInit {
 	}
 
 	sendCostCheck() {
-			// flow from filter allies in store
-		let allyAbilities = this.allyAbilities();
-			// flow from ability reel in store
-		let chosenAbilities = this.chosenAbilities;
-		
-		this.arenaStore.sendCostCheck(allyAbilities, chosenAbilities);
+		this.arenaStore.sendCostCheck(this.allyAbilities(), this.chosenAbilities);
 	}
 
 	sendTargetCheck(){
-		let ability = this.chosenAbility;
-		this.abilityCurrentlyClicked = true;
-		this.activeCharacterPosition = characterPosition;
-
 		let dto = new AbilityTargetDTO;
-		dto.ability = ability;
-		let p2pos = this.isPlayerOne ? characterPosition : characterPosition + 3;
-		dto.characterPosition = p2pos;
+		dto.ability = this.chosenAbility;
+		dto.characterPosition = this.activeCharacterPosition;
 		dto.targetPositions = [];
 
 		this.arenaStore.sendTargetCheck(dto);

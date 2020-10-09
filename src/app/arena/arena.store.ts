@@ -157,12 +157,13 @@ export class ArenaStore {
 
       if ( (msg.battle.playerOneStart && this.getIsPlayerOne()) || (!msg.battle.playerOneStart && !this.getIsPlayerOne()) ) {
         this.setHasTurn(true);
+        // component subscription
         this.sendCostCheck();
       } else {
         this.setHasTurn(false);
+        // component subscription
         this.disableAbilities();
       }
-
     }
 
 
@@ -177,6 +178,7 @@ export class ArenaStore {
       this.setSpent(this.newMap());
       this.setEnergyTrade(null);
       // do another cost check 
+      // this should be in a subscription to energy in the component
       this.sendCostCheck();
     }
     
@@ -379,7 +381,7 @@ export class ArenaStore {
     /// ABILITIES ///
 
 
-    confirmAbility(chosenAbility, tarArray, activeCharacterPosition) {
+    confirmAbility(chosenAbility, tarArray, activeCharacterPosition, chosenAbilities) {
 
       // form and add AbiltyTargetDTOS to array
 			let dto = new AbilityTargetDTO;
@@ -387,28 +389,14 @@ export class ArenaStore {
 			dto.targetPositions = tarArray;
 			dto.characterPosition = activeCharacterPosition;
 
-			// add DTO for backend call, gets sent at the end!!! (got it)
-			this.chosenAbilities.push(dto);
-
-			// add ability to UI
-			this.addAbilityToReel(this.chosenAbility);
-			this.clearSelection(false);
+      // add DTO for backend call, gets sent at the end!!! (got it)
+      chosenAbilities.push(dto);
+      this.setChosenAbilities(chosenAbilities);
     }
 
-    removeAbilityFromReel(ability, index, index2) {
-
-			this.refundCostTemporary(ability);
-	
-			this.chosenAbilities.splice(index, 1);
-      this.turnEffects.splice(index2, 1);
-    }
 
 
     //// ENERGY ////
-
-
-
-
 
     setTurnEnergy(energyMap) {
       this.turnEnergy = energyMap;
@@ -420,8 +408,6 @@ export class ArenaStore {
 
 
   // UTIL //////
-
-
 
     
 	newMap() {

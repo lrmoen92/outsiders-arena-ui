@@ -158,7 +158,7 @@
           <div class="abilities">
             <div *ngFor="let ally of tempAllies" class="ally-abilities">
               <div *ngFor="let ability of ally.abilities" class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ability)" (click)="clickAbility(ability)">
-                <img [ngStyle]="ability | abilityPipe" [src]="imgPrefix + ability.abilityUrl" class="ally-ability-portrait">
+                <img [ngStyle]="getAbilityStyle(ability)" [src]="imgPrefix + ability.abilityUrl" class="ally-ability-portrait">
               </div>
             </div>
           </div>
