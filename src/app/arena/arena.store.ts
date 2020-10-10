@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Ability, AbilityTargetDTO, BattleEffect, BattleTurnDTO, Character, Player } from '../model/api-models';
+import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, Player } from '../model/api-models';
 import { ArenaService } from './arena.service';
 
 @Injectable(
@@ -16,8 +16,214 @@ export class ArenaStore {
     allies : Array<Character>;
 
     isPlayerOne : boolean;
+
+    _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(false);
+    hasTurn: Observable<boolean> = this._hasTurn.asObservable();
+
     _victory: BehaviorSubject<boolean> = new BehaviorSubject(false);
     victory: Observable<boolean> = this._victory.asObservable();
+
+    _defeat: BehaviorSubject<boolean> = new BehaviorSubject(false);
+    defeat: Observable<boolean> = this._defeat.asObservable();
+    
+    _opponent: BehaviorSubject<Player> = new BehaviorSubject(null);
+    opponent: Observable<Player> = this._opponent.asObservable();
+    
+    _battle: BehaviorSubject<Battle> = new BehaviorSubject(null);
+    battle: Observable<Battle> = this._battle.asObservable();
+    
+    _tempAllies: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
+    tempAllies: Observable<Array<Character>> = this._tempAllies.asObservable();
+    
+    _enemies: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
+    enemies: Observable<Array<Character>> = this._enemies.asObservable();
+    
+    _battleAllies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
+    battleAllies: Observable<Array<CharacterInstance>> = this._battleAllies.asObservable();
+    
+    _battleEnemies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
+    battleEnemies: Observable<Array<CharacterInstance>> = this._battleEnemies.asObservable();
+    
+    _turnEnergy: BehaviorSubject<Map<string, Number>> = new BehaviorSubject(this.newMap());
+    turnEnergy: Observable<Map<string, Number>> = this._turnEnergy.asObservable();
+
+    _spentEnergy: BehaviorSubject<Map<string, Number>> = new BehaviorSubject(this.newMap());
+    spentEnergy: Observable<Map<string, Number>> = this._spentEnergy.asObservable();
+
+    _energyTrade: BehaviorSubject<string> = new BehaviorSubject(null);
+    energyTrade: Observable<string> = this._energyTrade.asObservable();
+    
+    _turnEffects: BehaviorSubject<Array<BattleEffect>> = new BehaviorSubject([]);
+    turnEffects: Observable<Array<BattleEffect>> = this._turnEffects.asObservable();
+    
+    _activeCharacterPosition: BehaviorSubject<number> = new BehaviorSubject(null);
+    activeCharacterPosition: Observable<number> = this._activeCharacterPosition.asObservable();
+    
+    _chosenAbility: BehaviorSubject<Ability> = new BehaviorSubject(null);
+    chosenAbility: Observable<Ability> = this._chosenAbility.asObservable();
+    
+    _chosenAbilities: BehaviorSubject<Array<AbilityTargetDTO>> = new BehaviorSubject([]);
+    chosenAbilities: Observable<Array<AbilityTargetDTO>> = this._chosenAbilities.asObservable();
+    
+    _availableAbilities: BehaviorSubject<Map<string, Number>> = new BehaviorSubject(new Map());
+    availableAbilities: Observable<Map<string, Number>> = this._availableAbilities.asObservable();
+    
+    _availableTargets: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
+    availableTargets: Observable<Array<number>> = this._availableTargets.asObservable();
+
+    /// GETTERS SETTERS////
+
+
+    getVictory() {
+      return this.victory;
+    }
+
+    setVictory(next) {
+      this._victory.next(next);
+    }
+
+    getDefeat() {
+      return this.defeat;
+    }
+
+    setDefeat(next) {
+      this._defeat.next(next);
+    }
+
+    getOpponent() {
+      return this.opponent;
+    }
+
+    setOpponent(next) {
+      this._opponent.next(next);
+    }
+
+    getBattle() {
+      return this.battle;
+    }
+
+    setBattle(next) {
+      this._battle.next(next);
+    }
+
+    getTempAllies() {
+      return this.tempAllies;
+    }
+
+    setTempAllies(next) {
+      this._tempAllies.next(next);
+    }
+
+    getEnemies() {
+      return this.enemies;
+    }
+
+    setEnemies(next) {
+      this._enemies.next(next);
+    }
+
+    getBattleAllies() {
+      return this.battleAllies;
+    }
+
+    setBattleAllies(next) {
+      this._battleAllies.next(next);
+    }  
+
+    getBattleEnemies() {
+      return this.battleEnemies;
+    }
+
+    setBattleEnemies(next) {
+      this._battleEnemies.next(next);
+    }
+    
+    getTurnEnergy() {
+      return this.turnEnergy;
+    }
+
+    setTurnEnergy(next) {
+      this._turnEnergy.next(next);
+    }    
+
+    getSpentEnergy() {
+      return this.spentEnergy;
+    }
+
+    setSpentEnergy(next) {
+      this._spentEnergy.next(next);
+    }
+    
+    getTurnEffects() {
+      return this.turnEffects;
+    }
+
+    setTurnEffects(next) {
+      this._turnEffects.next(next);
+    }
+        
+    getChosenAbilities() {
+      return this.chosenAbilities;
+    }
+
+    setChosenAbilities(next) {
+      this._chosenAbilities.next(next);
+    }
+        
+    getAvailableAbilities() {
+      return this.availableAbilities;
+    }
+
+    setAvailableAbilities(next) {
+      this._availableAbilities.next(next);
+    }
+
+    getAvailableTargets() {
+      return this.availableTargets;
+    }
+
+    setAvailableTargets(next) {
+      this._availableTargets.next(next);
+    }
+
+    getHasTurn() {
+      return this.hasTurn;
+    }
+
+    setHasTurn(next) {
+      this._hasTurn.next(next);
+    }
+
+    getEnergyTrade() {
+      return this.energyTrade;
+    }
+
+    setEnergyTrade(next) {
+      this._energyTrade.next(next);
+    }
+
+    getActiveCharacterPosition() {
+      return this.activeCharacterPosition;
+    }
+
+    setActiveCharacterPosition(next) {
+      this._activeCharacterPosition.next(next);
+    }
+
+    getChosenAbility() {
+      return this.chosenAbility;
+    }
+
+    setChosenAbility(next) {
+      this._chosenAbility.next(next);
+    }
+
+    /// GETTERS SETTERS////
+
+    setAllies(allies) {
+      this.allies = allies;
+    }
+
 
     setIsPlayerOne(isPlayerOne) {
       this.isPlayerOne = isPlayerOne;
@@ -29,6 +235,14 @@ export class ArenaStore {
 
     setArenaId(num : number) {
       this.arenaId = num;
+    }
+
+    getPlayer() {
+      return this.player;
+    }
+
+    setPlayer(player) {
+      this.player = player;
     }
 
     constructor(arenaService : ArenaService) {
@@ -52,6 +266,11 @@ export class ArenaStore {
           this.initSocket();
         },
       );
+      this.arenaService.websocketReady.subscribe(x => {
+        if (x) {
+          this.sendMatchMakingMessage();
+        }
+      })
     }
   
     connectToQuick(player) {
@@ -67,6 +286,11 @@ export class ArenaStore {
           this.initSocket();
         },
       );
+      this.arenaService.websocketReady.subscribe(x => {
+        if (x) {
+          this.sendMatchMakingMessage();
+        }
+      })
     }
   
     connectByPlayerName(player, name : string) {
@@ -82,33 +306,42 @@ export class ArenaStore {
           this.initSocket();
         },
       );
+      this.arenaService.websocketReady.subscribe(x => {
+        if (x) {
+          this.sendMatchMakingMessage();
+        }
+      })
     }
 
     initSocket() {
       this.arenaService.connectByArenaId(this.arenaId);
       this.subscribeToSocket();
-      this.sendMatchMakingMessage();
     }
 
+    isConnected() {
+      return this.arenaService.websocket.readyState === WebSocket.OPEN;
+    }
 
     subscribeToSocket(){
       this.arenaService.socketMessage.subscribe(msg => {
-        let mtp = msg.type;
+        if (msg){
+          let mtp = msg.type;
       
-        if (mtp === "INIT") {
-          this.handleInitResponse(msg);
-        } else if (mtp === "CCHECK") {
-          this.handleCostCheckResponse(msg);
-        } else if (mtp === "TCHECK") {
-          this.handleTargetCheckResponse(msg);
-        } else if (mtp === "ETRADE") {
-          this.handleEnergyTradeResponse(msg);
-        } else if (mtp === "END") {
-          this.handleTurnEndResponse(msg);
-        } else if (mtp === "SURRENDER") {
-          this.handleSurrenderResponse(msg);
-        } else {
-          console.log("Unrecognized Message, Type = " + mtp);
+          if (mtp === "INIT") {
+            this.handleInitResponse(msg);
+          } else if (mtp === "CCHECK") {
+            this.handleCostCheckResponse(msg);
+          } else if (mtp === "TCHECK") {
+            this.handleTargetCheckResponse(msg);
+          } else if (mtp === "ETRADE") {
+            this.handleEnergyTradeResponse(msg);
+          } else if (mtp === "END") {
+            this.handleTurnEndResponse(msg);
+          } else if (mtp === "SURRENDER") {
+            this.handleSurrenderResponse(msg);
+          } else {
+            console.log("Unrecognized Message, Type = " + mtp);
+          }
         }
       })
     }
@@ -116,7 +349,6 @@ export class ArenaStore {
 
     handleInitResponse(msg) {
       this.setIsPlayerOne(msg.battle.playerIdOne === this.player.id);
-      let hasTurn;
       if (this.getIsPlayerOne()){
         this.setPlayer(msg.playerOne);
         this.setOpponent(msg.playerTwo);
@@ -131,8 +363,8 @@ export class ArenaStore {
         this.setBattleAllies(msg.battle.playerOneTeam);
         this.setBattleEnemies(msg.battle.playerTwoTeam);
 
-        this.setEnergy(msg.battle.playerOneEnergy);
-        this.setSpent(this.newMap());
+        this.setTurnEnergy(msg.battle.playerOneEnergy);
+        this.setSpentEnergy(this.newMap());
       
       } else {
         this.setPlayer(msg.playerTwo);
@@ -148,21 +380,16 @@ export class ArenaStore {
         this.setBattleAllies(msg.battle.playerTwoTeam);
         this.setBattleEnemies(msg.battle.playerOneTeam);
 
-        this.setEnergy(msg.battle.playerOneEnergy);
-        this.setSpent(this.newMap());
-        
+        this.setTurnEnergy(msg.battle.playerOneEnergy);
+        this.setSpentEnergy(this.newMap()); 
       }
 
       this.setTempAllies(Object.create(this.allies));
 
       if ( (msg.battle.playerOneStart && this.getIsPlayerOne()) || (!msg.battle.playerOneStart && !this.getIsPlayerOne()) ) {
         this.setHasTurn(true);
-        // component subscription
-        this.sendCostCheck();
       } else {
         this.setHasTurn(false);
-        // component subscription
-        this.disableAbilities();
       }
     }
 
@@ -170,16 +397,13 @@ export class ArenaStore {
     handleEnergyTradeResponse(msg) {
       this.setBattle(msg.battle);
       if (this.getIsPlayerOne()) {
-        this.setEnergy(msg.battle.playerOneEnergy);
+        this.setTurnEnergy(msg.battle.playerOneEnergy);
       } else {
-        this.setEnergy(msg.battle.playerTwoEnergy);
+        this.setTurnEnergy(msg.battle.playerTwoEnergy);
       }
       
-      this.setSpent(this.newMap());
+      this.setSpentEnergy(this.newMap());
       this.setEnergyTrade(null);
-      // do another cost check 
-      // this should be in a subscription to energy in the component
-      this.sendCostCheck();
     }
     
     handleCostCheckResponse(msg) {
@@ -198,17 +422,6 @@ export class ArenaStore {
       } else {
         this._victory.next(true);
       }
-
-      // SUBCSCRIBE TO VICTORY OSERVABLE
-      this.endBattle();
-      
-      if(victory) {
-        this.playAudio("victory");
-        alert("YOU HAVE WON");
-      } else {
-        this.playAudio("loss");
-        alert("YOU HAVE LOST");
-      }
     }
     
 
@@ -224,78 +437,33 @@ export class ArenaStore {
         enemyTeam = msg.battle.playerTwoTeam;
         this.setBattleAllies(team);
         this.setBattleEnemies(enemyTeam);
-        this.setEnergy(msg.battle.playerOneEnergy);
+        this.setTurnEnergy(msg.battle.playerOneEnergy);
       } else {
         team = msg.battle.playerTwoTeam;
         enemyTeam = msg.battle.playerOneTeam;
         this.setBattleAllies(team);
         this.setBattleEnemies(enemyTeam);
-        this.setEnergy(msg.battle.playerTwoEnergy);
+        this.setTurnEnergy(msg.battle.playerTwoEnergy);
       }
 
       let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
       let defeat = team[0].dead && team[1].dead && team[2].dead;
 
       if (victory) {
-        this._victory.next(true);
+        this.setVictory(true);
       }
 
       if (defeat) {
-        this._defeat.next(true);
+        this.setDefeat(true);
       }
 
       if (msg.playerId === this.player.id) {
         console.log("You ended your turn");
-        this.cleanUpPhase();
         this.setHasTurn(false);
-        // move this to component in the subscription
-        this.disableAbilities();
       } else {
         console.log("They ended their turn");
         this.setHasTurn(true);
-        // move this to component in the subscription
-        this.filterAbilities(team);
-        this.checkForAoes(team, enemyTeam);
-        this.sendCostCheck();
       }
-
-      this.getCountdown().restart();
-
-      
-      // move this logic to subscription in component 
-
-      // for (let ch of this.getBattle().playerOneTeam) {
-      //   for (let chNew of msg.battle.playerOneTeam) {
-      //     if (ch.position == chNew.position) {
-      //       if (!ch.dead && chNew.dead) {
-      //         this.playAudio("die");
-      //       }
-      //     }
-      //   }
-      // }
-
-      // for (let ch of this.getBattle().playerTwoTeam) {
-      //   for (let chNew of msg.battle.playerTwoTeam) {
-      //     if (ch.position == chNew.position) {
-      //       if (!ch.dead && chNew.dead) {
-      //         this.playAudio("die");
-      //       }
-      //     }
-      //   }
-      // }
-
-      // subscribe to this in component 
-
-      // if(defeat) {
-      //   this.playAudio("loss");
-      //   this.endBattle();
-      //   alert("YOU HAVE LOST");
-      // }
-      // if(victory) {
-      //   this.playAudio("victory");
-      //   this.endBattle();
-      //   alert("YOU HAVE WON");
-      // }
     }
 
     // maybe these live in the component and facade back through the store?  makes the most sense.
@@ -398,14 +566,6 @@ export class ArenaStore {
 
     //// ENERGY ////
 
-    setTurnEnergy(energyMap) {
-      this.turnEnergy = energyMap;
-    }
-  
-    setSpentEnergy(energyMap) {
-      this.spentEnergy = energyMap;
-    }
-
 
   // UTIL //////
 
@@ -427,23 +587,5 @@ export class ArenaStore {
 		temp["DIVINITY"]=a["DIVINITY"];
 		return temp;
   }
-  
-  
-	cleanUpPhase() {
-		this.isReelEmpty = true;
-		this.abilityCurrentlyClicked = false;
-		this.chosenAbility = null;
-		this.hoveredAbility = null;
-		this.chosenAbilities = [];
-		this.turnEffects = [];
-		this.aoeTurnEffects = new Map();
-		this.availableTargets = [];
-		this.randomsNeeded = 0;
-		this.randomsAreNeeded = false;
-		this.showAreYouSure = false;
-		this.setSpent(this.newMap());
-		this.refreshTradeState();
-		this.stopAudio();
-	}
 
 }

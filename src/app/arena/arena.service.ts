@@ -11,6 +11,9 @@ export class ArenaService {
     httpClient: HttpClient;
     websocket: WebSocket;
 
+    _websocketReady: BehaviorSubject<any> = new BehaviorSubject(false);
+    websocketReady: Observable<any> = this._websocketReady.asObservable();
+
     _socketMessage: BehaviorSubject<any> = new BehaviorSubject(null);
     socketMessage: Observable<any> = this._socketMessage.asObservable();
   
@@ -37,10 +40,15 @@ export class ArenaService {
       this.connect(arenaId);
       this.websocket.onopen = () => {
         this.handleMessage();
+        this.webSocketOpen();
       }
       this.websocket.onerror = (e) => {
         console.log(e);
       }
+    }
+
+    webSocketOpen() {
+      this._websocketReady.next(true);
     }
 
     connect(arenaId) {
@@ -57,7 +65,9 @@ export class ArenaService {
     }
 
     sendWebsocketMessage(str) {
-      this.websocket.send(str);
+      if (this.websocket) {
+        this.websocket.send(str);
+      }
     }
 
     handleMessage() {

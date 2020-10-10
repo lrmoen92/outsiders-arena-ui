@@ -25,9 +25,6 @@ export class ArenaComponent implements OnInit {
 
 	@ViewChild(CountdownComponent) private countdown: CountdownComponent;
 	config: CountdownConfig;
-
-	httpClient : HttpClient;
-	webSocket : WebSocket = null;
 	
 	loginStore : LoginStore;
 	characterStore : CharacterStore;
@@ -87,7 +84,7 @@ export class ArenaComponent implements OnInit {
 	
 
 
-	availableAbilities : Map<string, number> = new Map();
+	availableAbilities : Map<string, Number> = new Map();
 	lockedAbilities : Array<Number> = [];
 
 	hoveredAbility : Ability = null;
@@ -139,7 +136,98 @@ export class ArenaComponent implements OnInit {
 		this.config = this.countdownConfigFactory();
 		this.loginStore.getPlayer().subscribe( x => {
 			this.player = x;
+			this.arenaStore.setPlayer(this.player);
 		});
+		this.arenaStore.getOpponent().subscribe( x => {
+			this.opponent = x;
+		});
+
+		this.arenaStore.getBattle().subscribe(x => {
+			this.battle = x;
+			if (x) {
+				this.inBattle = true;
+				this.countdown.restart();
+			}
+		})
+
+		this.arenaStore.getBattleAllies().subscribe(x => {
+			for (let c of this.battleAllies) {
+				for (let d of x) {
+					if (c.position == d.position) {
+						if (!c.dead && d.dead) {
+							this.playAudio("die");
+						}
+					}
+				}
+			}
+			this.battleAllies = x;
+		});
+		this.arenaStore.getBattleEnemies().subscribe(x => {
+			for (let c of this.battleEnemies) {
+				for (let d of x) {
+					if (c.position == d.position) {
+						if (!c.dead && d.dead) {
+							this.playAudio("die");
+						}
+					}
+				}
+			}
+			this.battleEnemies = x;
+		});
+		this.arenaStore.getHasTurn().subscribe(x => {
+			if (!this.hasTurn && x) {
+				this.filterAbilities(x);
+				this.filterEffects(this.battleAllies, this.battleEnemies);
+				this.sendCostCheck();
+				// opponent ended turn
+			}
+			if (this.hasTurn && !x){
+				this.disableAbilities();
+				this.cleanUpPhase();
+				// i ended turn
+			}
+			this.hasTurn = x;
+			this.countdown.restart();
+		})
+		this.arenaStore.getTurnEnergy().subscribe(x => {
+			this.turnEnergy = x;
+			this.sendCostCheck();
+		})
+		this.arenaStore.getSpentEnergy().subscribe(x => {
+			this.spentEnergy = x;
+		})
+		this.arenaStore.getTurnEffects().subscribe(x => {
+			this.turnEffects = x;
+		})
+		this.arenaStore.getAvailableAbilities().subscribe(x => {
+			this.availableAbilities = x;
+		})
+		this.arenaStore.getAvailableTargets().subscribe(x => {
+			this.availableTargets = x;
+		})
+		this.arenaStore.getChosenAbilities().subscribe(x => {
+			this.chosenAbilities = x;
+		})
+		this.arenaStore.getChosenAbility().subscribe(x => {
+			this.chosenAbility = x;
+		})
+		this.arenaStore.getActiveCharacterPosition().subscribe(x => {
+			this.activeCharacterPosition = x;
+		})
+
+		this.arenaStore.getVictory().subscribe(x => {
+			if (x) {
+				this.playAudio("victory");
+				alert("YOU HAVE WON");
+			}
+		})
+		
+		this.arenaStore.getDefeat().subscribe(x => {
+			if (x) {
+				this.playAudio("loss");
+				alert("YOU HAVE LOST");
+			}
+		})
 
 	}
 
@@ -223,7 +311,14 @@ export class ArenaComponent implements OnInit {
 		if (this.allies.length !== 3) {
 			alert ("You must select three characters");
 		} else {
+			this.arenaStore.setAllies(this.allies);
 			this.arenaStore.connectToLadder(this.player);
+			
+			if (this.arenaStore.isConnected()) {
+
+			}
+
+			this.arenaStore.sendMatchMakingMessage();
 		}
 	}
 	
@@ -231,6 +326,7 @@ export class ArenaComponent implements OnInit {
 		if (this.allies.length !== 3) {
 			alert ("You must select three characters");
 		} else {
+			this.arenaStore.setAllies(this.allies);
 			this.arenaStore.connectToQuick(this.player);
 		}
 	}
@@ -240,6 +336,7 @@ export class ArenaComponent implements OnInit {
 			if (this.allies.length !== 3) {
 				alert ("You must select three characters");
 			} else {
+				this.arenaStore.setAllies(this.allies);
 				this.arenaStore.connectByPlayerName(this.player, this.opponentName);
 			}
 		} else {
@@ -512,6 +609,16 @@ export class ArenaComponent implements OnInit {
 	// ------ ABILITIES/TARGETS ---------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
+	getPortraits(value) {
+		for(let c of this.allCharacters) {
+			console.log(c);
+			if (c.id === value) {
+				return c.avatarUrl;
+			}
+		}
+		return "";
+	}
+
 
     filterEffects(battleAllies, battleEnemies) {
 		// gotta populate a map of <instanceID, effect> so we dont show AOE more than once on turnEffects // TODO:
@@ -626,7 +733,7 @@ export class ArenaComponent implements OnInit {
 	}
 	
 	getAbilityCooldown(ability) : number  {
-		let entry = this.availableAbilities.get(ability.name);
+		let entry = <number> this.availableAbilities.get(ability.name);
 		if (entry < 0){
 			return -1 - entry;
 		} else {
@@ -741,6 +848,10 @@ export class ArenaComponent implements OnInit {
 				x.instanceId !== -1;
 			})
 		);
+	  }
+
+	  isReelEmpty() {
+		  return (this.chosenAbilities.length > 0) || (this.turnEffects.length > 0);
 	  }
 
 
@@ -877,10 +988,6 @@ export class ArenaComponent implements OnInit {
 	// ------ SEND MESSAGES -------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-    sendMatchMakingMessage() {
-		this.arenaStore.sendMatchMakingMessage();
-	}
-
 	sendCostCheck() {
 		this.arenaStore.sendCostCheck(this.allyAbilities(), this.chosenAbilities);
 	}
@@ -949,6 +1056,23 @@ export class ArenaComponent implements OnInit {
 	// ======================================================================================================================
 	// ------ OTHER -----------------------------------------------------------------------------------------------
 	// ======================================================================================================================
+
+  
+  
+	cleanUpPhase() {
+		this.abilityCurrentlyClicked = false;
+		this.chosenAbility = null;
+		this.hoveredAbility = null;
+		this.aoeTurnEffects = new Map();
+		this.randomsNeeded = 0;
+		this.randomsAreNeeded = false;
+		this.showAreYouSure = false;
+		this.arenaStore.setSpentEnergy(this.newMap());
+		this.arenaStore.setChosenAbilities([]);
+		this.arenaStore.setTurnEffects([]);
+		this.refreshTradeState();
+		this.stopAudio();
+	}
 
 
 	areYouSure() {
