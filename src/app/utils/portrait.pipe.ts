@@ -1,5 +1,4 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { CharacterService } from '../character/character.service';
 import { CharacterStore } from '../character/character.store';
 
 @Pipe({name: 'findPortrait'})
@@ -10,10 +9,15 @@ export class PortraitPipe implements PipeTransform {
 
     constructor(store: CharacterStore) {
         this.store = store;
-        this.allCharacters = store.getCharacters();
     }
 
-    transform(){
-      
-    }
+    transform(value){
+        for(let c of this.allCharacters) {
+          console.log(c);
+          if (c.id === value) {
+            return c.avatarUrl;
+          }
+        }
+        return "";
+      }
 }

@@ -609,16 +609,6 @@ export class ArenaComponent implements OnInit {
 	// ------ ABILITIES/TARGETS ---------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-	getPortraits(value) {
-		for(let c of this.allCharacters) {
-			console.log(c);
-			if (c.id === value) {
-				return c.avatarUrl;
-			}
-		}
-		return "";
-	}
-
 
     filterEffects(battleAllies, battleEnemies) {
 		// gotta populate a map of <instanceID, effect> so we dont show AOE more than once on turnEffects // TODO:
