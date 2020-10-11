@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect, BattleEffect} from 'src/app/model/api-models';
+import { Battle, Character, Player, CharacterInstance, BattleTurnDTO, AbilityTargetDTO, Ability, Effect, BattleEffect, Portrait} from 'src/app/model/api-models';
 import { URLS, serverPrefix } from 'src/app/utils/constants';
 import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -14,6 +14,7 @@ import { ArenaStore } from './arena.store';
 
 @Component({
   selector: 'arena-root',
+//   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './arena.component.html',
   styleUrls: ['./arena.component.css']
 })
@@ -23,7 +24,7 @@ export class ArenaComponent implements OnInit {
 	// ------ PROPERTIES ----------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-	@ViewChild(CountdownComponent) private countdown: CountdownComponent;
+	@ViewChild('countdown') private countdown: CountdownComponent;
 	config: CountdownConfig;
 	
 	loginStore : LoginStore;
@@ -32,7 +33,7 @@ export class ArenaComponent implements OnInit {
 	
 
 	opponentName : string;
-	arenaId : Number;
+	arenaId : number;
 
 
 	connected : Boolean = false;
@@ -56,18 +57,22 @@ export class ArenaComponent implements OnInit {
 
 
 
+	totalEnergy : number = 0;
+	totalSpentEnergy : number = 0;
 
-	turnEnergy : Map<string, Number> = new Map();
-	turnStrength : Array<string>;
-	turnDexterity : Array<string>;
-	turnArcana : Array<string>;
-	turnDivinity : Array<string>;
+	turnEnergy : Map<string, number> = new Map();
 
-	spentEnergy : Map<string, Number> = new Map();
-	spentStrength : Array<string>;
-	spentDexterity : Array<string>;
-	spentArcana : Array<string>;
-	spentDivinity : Array<string>;
+	turnStrength : Array<string> = [];
+	turnDexterity : Array<string> = [];
+	turnArcana : Array<string> = [];
+	turnDivinity : Array<string> = [];
+
+	spentEnergy : Map<string, number> = new Map();
+
+	spentStrength : Array<string> = [];
+	spentDexterity : Array<string> = [];
+	spentArcana : Array<string> = [];
+	spentDivinity : Array<string> = [];
 
 	randomCap = 0;
 	lockedStr = 0;
@@ -76,16 +81,15 @@ export class ArenaComponent implements OnInit {
 	lockedDiv = 0;
 
 	energyTrade : string;
+
 	randomsAreNeeded : boolean = false;
-	totalEnergy : number = 0;
-	totalSpentEnergy : number = 0;
 	randomsNeeded : number = 0;
 
 	
+	allyAbilityCosts : Array<Array<string>> = [];
 
-
-	availableAbilities : Map<string, Number> = new Map();
-	lockedAbilities : Array<Number> = [];
+	availableAbilities : Map<string, number> = new Map();
+	lockedAbilities : Array<number> = [];
 
 	hoveredAbility : Ability = null;
 	hoveredAbilityCooldown: number;
@@ -94,14 +98,14 @@ export class ArenaComponent implements OnInit {
 	turnEffects : Array<BattleEffect> = [];
 	chosenAbilities : Array<AbilityTargetDTO> = [];
 
-	activeCharacterPosition : Number = -1;
+	activeCharacterPosition : number = -1;
 	chosenAbility: Ability;
-	availableTargets: Array<Number> = [];
+	availableTargets: Array<number> = [];
 	abilityCurrentlyClicked: boolean;
 
 
 
-	aoeTurnEffects : Map<Number, Array<BattleEffect>> = new Map();
+	aoeTurnEffects : Map<number, Array<BattleEffect>> = new Map();
 
 	playingAudio: HTMLAudioElement;
 	secondaryAudio: HTMLAudioElement;
@@ -109,7 +113,8 @@ export class ArenaComponent implements OnInit {
 	faVolumeUp = faVolumeUp;
 	volume: number = 0.5;
 
-
+	characterPortraits: Map<number, Portrait> = new Map();
+	battlePortraits: Map<string, Portrait> = new Map();
 	imgPrefix : string = serverPrefix;
 	showAreYouSure: boolean;
 
@@ -130,7 +135,16 @@ export class ArenaComponent implements OnInit {
 	ngOnInit() {
 
 		this.characterStore.getCharacters().subscribe( x => {
-			this.allCharacters = x;
+			if (x) {
+				this.allCharacters = x;
+				for(let c of x) {
+					let portrait : Portrait = {
+						style : {opacity : 1.0},
+						url : this.imgPrefix + c.avatarUrl
+					}
+					this.characterPortraits.set(c.id, portrait);
+				}
+			}
 		});
 		this.arenaStore.disconnect();
 		this.config = this.countdownConfigFactory();
@@ -142,15 +156,28 @@ export class ArenaComponent implements OnInit {
 			this.opponent = x;
 		});
 
-		this.arenaStore.getBattle().subscribe(x => {
-			this.battle = x;
-			if (x) {
-				this.inBattle = true;
-				this.countdown.restart();
+		this.arenaStore.getBattle().subscribe(
+			x => {
+				if (x) {
+					this.battle = x;
+					this.inBattle = true;
+				}
+			}, y=> {
+
+			}, ()=> {
+
 			}
-		})
+		)
 
 		this.arenaStore.getBattleAllies().subscribe(x => {
+			if (!this.inBattle) {
+				for(let c of x) {
+					let portrait : Portrait = this.characterPortraits.get(c.characterId);
+					let battlePortrait : Portrait = Object.assign(portrait);
+					this.battlePortraits.set(c.characterId + (c.playerOneCharacter ? "o" : "t"), battlePortrait);
+				}
+			}
+
 			for (let c of this.battleAllies) {
 				for (let d of x) {
 					if (c.position == d.position) {
@@ -160,9 +187,20 @@ export class ArenaComponent implements OnInit {
 					}
 				}
 			}
+
+			this.filterAbilities(x);
+
 			this.battleAllies = x;
 		});
 		this.arenaStore.getBattleEnemies().subscribe(x => {
+			if (!this.inBattle) {
+				for(let c of x) {
+					let portrait : Portrait = this.characterPortraits.get(c.characterId);
+					let battlePortrait : Portrait = Object.assign(portrait);
+					this.battlePortraits.set(c.characterId + (c.playerOneCharacter ? "o" : "t"), battlePortrait);
+				}
+			}
+
 			for (let c of this.battleEnemies) {
 				for (let d of x) {
 					if (c.position == d.position) {
@@ -172,29 +210,78 @@ export class ArenaComponent implements OnInit {
 					}
 				}
 			}
+
+			this.filterEffects(this.battleAllies, x);
+
 			this.battleEnemies = x;
 		});
-		this.arenaStore.getHasTurn().subscribe(x => {
-			if (!this.hasTurn && x) {
-				this.filterAbilities(x);
-				this.filterEffects(this.battleAllies, this.battleEnemies);
+		this.arenaStore.getHasTurn().subscribe(
+			x => {
+				if (this.hasTurn && !x){
+					this.disableAbilities();
+					this.cleanUpPhase();
+					// i ended turn
+				}
+				this.hasTurn = x;
+			},
+			y => {
+
+			},
+			() => {
 				this.sendCostCheck();
-				// opponent ended turn
+				this.countdown.restart();
 			}
-			if (this.hasTurn && !x){
-				this.disableAbilities();
-				this.cleanUpPhase();
-				// i ended turn
-			}
-			this.hasTurn = x;
-			this.countdown.restart();
-		})
+		)
 		this.arenaStore.getTurnEnergy().subscribe(x => {
-			this.turnEnergy = x;
-			this.sendCostCheck();
+			if (x) {
+				this.turnEnergy = this.copyMap(x);
+
+				let str = this.turnEnergy.get("STRENGTH");
+				let dex = this.turnEnergy.get("DEXTERITY");
+				let arc = this.turnEnergy.get("ARCANA");
+				let div = this.turnEnergy.get("DIVINITY");
+	
+				this.totalEnergy = str + dex + arc + div;
+	
+				for (let i = 0; i < str; i++) {
+					this.turnStrength.push("STRENGTH");
+				}
+				for (let i = 0; i < dex; i++) {
+					this.turnDexterity.push("DEXTERITY");
+				}
+				for (let i = 0; i < arc; i++) {
+					this.turnArcana.push("ARCANA");
+				}
+				for (let i = 0; i < div; i++) {
+					this.turnDivinity.push("DIVINITY");
+				}
+			}
 		})
 		this.arenaStore.getSpentEnergy().subscribe(x => {
-			this.spentEnergy = x;
+			if (x) {
+				this.spentEnergy = this.copyMap(x);
+
+				let str = this.spentEnergy.get("STRENGTH");
+				let dex = this.spentEnergy.get("DEXTERITY");
+				let arc = this.spentEnergy.get("ARCANA");
+				let div = this.spentEnergy.get("DIVINITY");
+	
+				this.totalSpentEnergy = str + dex + arc + div;
+	
+				for (let i = 0; i < str; i++) {
+					this.spentStrength.push("STRENGTH");
+				}
+				for (let i = 0; i < dex; i++) {
+					this.spentDexterity.push("DEXTERITY");
+				}
+				for (let i = 0; i < arc; i++) {
+					this.spentArcana.push("ARCANA");
+				}
+				for (let i = 0; i < div; i++) {
+					this.spentDivinity.push("DIVINITY");
+				}
+			}
+
 		})
 		this.arenaStore.getTurnEffects().subscribe(x => {
 			this.turnEffects = x;
@@ -204,6 +291,7 @@ export class ArenaComponent implements OnInit {
 		})
 		this.arenaStore.getAvailableTargets().subscribe(x => {
 			this.availableTargets = x;
+			this.updateCharacterStyles();
 		})
 		this.arenaStore.getChosenAbilities().subscribe(x => {
 			this.chosenAbilities = x;
@@ -313,12 +401,6 @@ export class ArenaComponent implements OnInit {
 		} else {
 			this.arenaStore.setAllies(this.allies);
 			this.arenaStore.connectToLadder(this.player);
-			
-			if (this.arenaStore.isConnected()) {
-
-			}
-
-			this.arenaStore.sendMatchMakingMessage();
 		}
 	}
 	
@@ -352,10 +434,7 @@ export class ArenaComponent implements OnInit {
 		return {
 			notify: 0,
 			format: `s`,
-			leftTime: 60,
-			prettyText: (s => {
-				return "TIMER: " + s;
-			}),
+			leftTime: 60
 		};
 	}
 
@@ -391,20 +470,20 @@ export class ArenaComponent implements OnInit {
 	// ======================================================================================================================
 
 	newMap() {
-		let temp : Map<string, Number> = new Map();
-		temp["STRENGTH"]=0;
-		temp["DEXTERITY"]=0;
-		temp["ARCANA"]=0;
-		temp["DIVINITY"]=0;
+		let temp : Map<string, number> = new Map();
+		temp.set("STRENGTH", 0);
+		temp.set("DEXTERITY", 0);
+		temp.set("ARCANA", 0);
+		temp.set("DIVINITY", 0);
 		return temp;
 	}
 
-	copyMap(a : Map<string, Number>) {
-		let temp : Map<string, Number> = new Map();
-		temp["STRENGTH"]=a["STRENGTH"];
-		temp["DEXTERITY"]=a["DEXTERITY"];
-		temp["ARCANA"]=a["ARCANA"];
-		temp["DIVINITY"]=a["DIVINITY"];
+	copyMap(a : Map<string, number>) {
+		let temp : Map<string, number> = new Map();
+		temp.set("STRENGTH", a.get("STRENGTH"));
+		temp.set("DEXTERITY", a.get("DEXTERITY"));
+		temp.set("ARCANA", a.get("ARCANA"));
+		temp.set("DIVINITY", a.get("DIVINITY"));
 		return temp;
 	}
 
@@ -431,12 +510,12 @@ export class ArenaComponent implements OnInit {
 	}
 
 	spendCopy(energy: string) {
-		let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
+		let temp : Map<string, number> = this.copyMap(this.turnEnergy);
 
 		let oldVal = temp[energy]
 		temp[energy] = oldVal - 1;
 		
-		let temp2 : Map<string, Number> = this.copyMap(this.spentEnergy);
+		let temp2 : Map<string, number> = this.copyMap(this.spentEnergy);
 
 		let oldVal2 = temp2[energy]
 		temp2[energy] = oldVal2 + 1;
@@ -466,7 +545,6 @@ export class ArenaComponent implements OnInit {
 				alert("You can't remove that energy, remove the ability you spent it on first!");
 			} else {
 				if (!force) {
-					console.log(this.randomCap);
 					if (this.randomsNeeded < this.randomCap) {
 						this.randomsNeeded++;
 						this.randomsAreNeeded = true;
@@ -479,12 +557,12 @@ export class ArenaComponent implements OnInit {
 				}
 	
 	
-				let temp : Map<string, Number> = this.copyMap(this.turnEnergy);
+				let temp : Map<string, number> = this.copyMap(this.turnEnergy);
 	
 				let oldVal = temp[energy]
 				temp[energy] = oldVal + 1;
 				
-				let temp2 : Map<string, Number> = this.copyMap(this.spentEnergy);
+				let temp2 : Map<string, number> = this.copyMap(this.spentEnergy);
 	
 				let oldVal2 = temp2[energy]
 				temp2[energy] = oldVal2 - 1;
@@ -498,7 +576,7 @@ export class ArenaComponent implements OnInit {
 	abilitiesAreChosen() {
 		return this.chosenAbilities.length > 0;
 	}
-	
+
 	calculateLockedEnergy() {
 		this.randomCap = 0;
 		this.lockedStr = 0;
@@ -526,13 +604,13 @@ export class ArenaComponent implements OnInit {
 
 	removeOneRandomEnergy() {
 
-		if (this.spentEnergy["STRENGTH"] > this.lockedStr) {
+		if (this.spentEnergy.get("STRENGTH") > this.lockedStr) {
 			this.returnEnergy("STRENGTH", true);
-		} else if (this.spentEnergy["DEXTERITY"] > this.lockedDex) {
+		} else if (this.spentEnergy.get("DEXTERITY") > this.lockedDex) {
 			this.returnEnergy("DEXTERITY", true);
-		} else if (this.spentEnergy["ARCANA"] > this.lockedArc) {
+		} else if (this.spentEnergy.get("ARCANA") > this.lockedArc) {
 			this.returnEnergy("ARCANA", true);
-		} else  if (this.spentEnergy["DIVINITY"] > this.lockedDiv) {
+		} else if (this.spentEnergy.get("DIVINITY") > this.lockedDiv) {
 			this.returnEnergy("DIVINITY", true);
 		} else {
 			alert("this should never happen");
@@ -692,14 +770,48 @@ export class ArenaComponent implements OnInit {
 		}
 	
 		this.tempAllies = newAllies;
+
+		this.allyAbilityCosts = [];
+		for (let ability of this.allyAbilities()) {
+			this.allyAbilityCosts.push(ability.cost);
+		}
 	  }
 
 	  getCharacterPosition(string) {
 		  this.allyAbilities().forEach((x, y, z) => {
 			  if (x.name === string) {
-				return y + (this.isPlayerOne ? 0 : 3);
+				return Math.floor(y/4) + (this.isPlayerOne ? 0 : 3);
 			  }
 		  })
+	  }
+
+	  
+
+	  isTrueForPlayerOne(p1boo) {
+		if (this.isPlayerOne) {
+			return p1boo;
+		} else {
+			return !p1boo;
+		}
+	  }
+
+	  updateCharacterStyles() {
+		for(let c of this.battleAllies) {
+			this.battlePortraits.forEach((portrait, id) => {
+				let realId = <any> (<string> id).substring(0, id.length - 1);
+				if (realId === c.characterId && this.isTrueForPlayerOne(c.playerOneCharacter)) {
+					portrait.style = this.getCharacterStyle(c.position);
+				}
+			})
+		}
+		for(let c of this.battleEnemies) {
+			this.battlePortraits.forEach((portrait, id) => {
+				let realId = <any> (<string> id).substring(0, id.length - 1);
+				if (realId === c.characterId && this.isTrueForPlayerOne(!c.playerOneCharacter)) {
+					portrait.style = this.getCharacterStyle(c.position);
+				}
+			})
+		}
 	  }
 
 	clickAbility(ability) {
@@ -723,12 +835,16 @@ export class ArenaComponent implements OnInit {
 	}
 	
 	getAbilityCooldown(ability) : number  {
-		let entry = <number> this.availableAbilities.get(ability.name);
-		if (entry < 0){
-			return -1 - entry;
-		} else {
-			return 0;
+		if (this.availableAbilities.size > 0) {
+			let entry = <number> this.availableAbilities.get(ability.name);
+			if (entry < 0){
+				return -1 - entry;
+			} else {
+				return 0;
+			}
 		}
+		// lock abilities by default if our array is empty;
+		return -1;
 	}
 	
 	isTargetLocationLocked(charPos) : boolean  {
@@ -746,6 +862,14 @@ export class ArenaComponent implements OnInit {
 
 	disableAbilities() {
 		this.availableAbilities = new Map();
+	}
+
+	getCharacterPortrait(character): Portrait {
+		if (this.battlePortraits.size > 0) {
+			return this.battlePortraits.get(character.characterId + (character.playerOneCharacter ? 'o' : 't'));
+		} else {
+			return new Portrait();
+		}
 	}
 
 
@@ -800,7 +924,7 @@ export class ArenaComponent implements OnInit {
 			// add ability to UI
 			this.addAbilityToReel(this.chosenAbility);
 			this.clearSelection(false);
-			this.sendCostCheck();
+			// this.sendCostCheck();
 		} else {
 			// TODO:
 			// clicking targets should show character blurb normally (duh)
@@ -816,7 +940,7 @@ export class ArenaComponent implements OnInit {
 	clearSelection(force) {
 		this.abilityCurrentlyClicked = false;
 		this.activeCharacterPosition = -1;
-		this.availableTargets = [];
+		this.arenaStore.setAvailableTargets([]);
 		this.hideAbilityPanel(force);
 	}
 
@@ -949,7 +1073,6 @@ export class ArenaComponent implements OnInit {
 		stringArray.push(four);
 
 		let final = stringArray.join(' \n ');
-		// console.log(final);
 		return final;
 	}
 
@@ -979,7 +1102,7 @@ export class ArenaComponent implements OnInit {
 	// ======================================================================================================================
 
 	sendCostCheck() {
-		this.arenaStore.sendCostCheck(this.allyAbilities(), this.chosenAbilities);
+		this.arenaStore.sendCostCheck(this.allyAbilityCosts, this.chosenAbilities);
 	}
 
 	sendTargetCheck(){
@@ -991,7 +1114,7 @@ export class ArenaComponent implements OnInit {
 		this.arenaStore.sendTargetCheck(dto);
 	}
 
-	sendEnergyTrade(energySpent : Map<String, Number>, energyGained : string){
+	sendEnergyTrade(energySpent : Map<String, number>, energyGained : string){
 
 		this.arenaStore.sendEnergyTrade(energySpent, energyGained);
 	}
@@ -1011,7 +1134,6 @@ export class ArenaComponent implements OnInit {
 	
 	sendTurnEndMessage() {
 
-		let spentEnergy : Map<string, Number> = this.spentEnergy;
 		let abilityDTOs : Array<AbilityTargetDTO> = [];
 		let effects : Array<BattleEffect> = this.turnEffects;
 
@@ -1038,7 +1160,7 @@ export class ArenaComponent implements OnInit {
 			}
 		}
 
-		this.arenaStore.sendTurnEndMessage(spentEnergy, abilityDTOs, finalEffects);
+		this.arenaStore.sendTurnEndMessage(this.spentEnergy, abilityDTOs, finalEffects);
 	}
 
 
@@ -1076,7 +1198,9 @@ export class ArenaComponent implements OnInit {
 	allyAbilities() : Array<Ability> {
 		let allAbilities = [];
 		for (let ally of this.tempAllies) {
-		  allAbilities.push(ally.abilities);
+			for (let ability of ally.abilities) {
+				allAbilities.push(ability);
+			}
 		}
 		return allAbilities;
 	}

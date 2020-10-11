@@ -1,23 +1,23 @@
 export class Player {
-    id : Number;
+    id : number;
     avatarUrl : string;
     displayName : string;
-    level : Number;
+    level : number;
 }
 
 export class Character {
-    id : Number;
+    id : number;
     avatarUrl : string;
     name : string;
     abilities : Array<Ability>;
 }
 
 export class CharacterInstance {
-    hp : Number;
+    hp : number;
     playerOneCharacter : Boolean;
     // player 1 (1, 2, 3) player 2 (4, 5, 6)
-    position : Number;
-    characterId : Number;
+    position : number;
+    characterId : number;
     effects : Array<BattleEffect>;
     dead : Boolean;
     highlighted : Boolean;
@@ -25,23 +25,28 @@ export class CharacterInstance {
 
 export class AbilityTargetDTO {
     ability : Ability;
-    characterPosition: Number;
-    targetPositions : Array<Number>;
+    characterPosition: number;
+    targetPositions : Array<number>;
 }
 
 export class BattleTurnDTO {
-    spentEnergy : Map<string, Number>;
+    spentEnergy : any;
     effects : Array<BattleEffect>;
     abilities : Array<AbilityTargetDTO>;
 }
 
 export class CostCheckDTO {
     chosenAbilities : Array<AbilityTargetDTO>;
-    alliedAbilities : Array<Ability>
+    allyCosts : Array<Ability>
+}
+
+export class Portrait {
+    style : any;
+    url : string;
 }
 
 export class Ability {
-    cooldown : Number;
+    cooldown : number;
     name : string;
     abilityUrl : string;
     description : string;
@@ -61,7 +66,7 @@ export class Ability {
 }
 
 export class Effect {
-    duration : Number;
+    duration : number;
     avatarUrl : string;
 
     name : string;
@@ -75,30 +80,30 @@ export class Effect {
     conditional : Boolean;
     visible : Boolean;
     stacks : Boolean;
-    statMods : Map<string, Number>;
+    statMods : Map<string, number>;
 }
 
 export class BattleEffect extends Effect {
       // used to identify an effect within the context of a battle (backend assigned)
-      instanceId : Number;
+      instanceId : number;
       // used to identify an effect within the context of a battle (backend assigned)
-      groupId : Number;
+      groupId : number;
       // only for effects on character instances (should be position based)
-      originCharacter : Number;
-      targetCharacter : Number;
+      originCharacter : number;
+      targetCharacter : number;
 }
 
 export class Battle {
-    id : Number;
+    id : number;
     playerOneStart : Boolean;
     status : string;
-    turn : Number;
-    arenaId : Number;
-    playerIdOne : Number;
-    playerIdTwo : Number;
+    turn : number;
+    arenaId : number;
+    playerIdOne : number;
+    playerIdTwo : number;
     playerOneTeam : Array<CharacterInstance>;
     playerTwoTeam : Array<CharacterInstance>;
-    playerOneEnergy : Map<string, Number>;
-    playerTwoEnergy : Map<string, Number>;
+    playerOneEnergy : Map<string, number>;
+    playerTwoEnergy : Map<string, number>;
 }
 

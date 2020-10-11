@@ -35,7 +35,7 @@ export class NavComponent implements OnInit {
 
   goLogout(){
     this.loginStore.logoutPlayer();
-    this.router.navigate(['home'])
+    this.router.navigate(['/'])
   }
 
   goLogin(){

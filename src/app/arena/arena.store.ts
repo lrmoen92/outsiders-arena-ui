@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, Player } from '../model/api-models';
+import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, CostCheckDTO, Player } from '../model/api-models';
 import { ArenaService } from './arena.service';
 
 @Injectable(
@@ -44,14 +44,11 @@ export class ArenaStore {
     _battleEnemies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
     battleEnemies: Observable<Array<CharacterInstance>> = this._battleEnemies.asObservable();
     
-    _turnEnergy: BehaviorSubject<Map<string, Number>> = new BehaviorSubject(this.newMap());
-    turnEnergy: Observable<Map<string, Number>> = this._turnEnergy.asObservable();
+    _turnEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
+    turnEnergy: Observable<Map<string, number>> = this._turnEnergy.asObservable();
 
-    _spentEnergy: BehaviorSubject<Map<string, Number>> = new BehaviorSubject(this.newMap());
-    spentEnergy: Observable<Map<string, Number>> = this._spentEnergy.asObservable();
-
-    _energyTrade: BehaviorSubject<string> = new BehaviorSubject(null);
-    energyTrade: Observable<string> = this._energyTrade.asObservable();
+    _spentEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
+    spentEnergy: Observable<Map<string, number>> = this._spentEnergy.asObservable();
     
     _turnEffects: BehaviorSubject<Array<BattleEffect>> = new BehaviorSubject([]);
     turnEffects: Observable<Array<BattleEffect>> = this._turnEffects.asObservable();
@@ -65,8 +62,8 @@ export class ArenaStore {
     _chosenAbilities: BehaviorSubject<Array<AbilityTargetDTO>> = new BehaviorSubject([]);
     chosenAbilities: Observable<Array<AbilityTargetDTO>> = this._chosenAbilities.asObservable();
     
-    _availableAbilities: BehaviorSubject<Map<string, Number>> = new BehaviorSubject(new Map());
-    availableAbilities: Observable<Map<string, Number>> = this._availableAbilities.asObservable();
+    _availableAbilities: BehaviorSubject<Map<string, number>> = new BehaviorSubject(new Map());
+    availableAbilities: Observable<Map<string, number>> = this._availableAbilities.asObservable();
     
     _availableTargets: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableTargets: Observable<Array<number>> = this._availableTargets.asObservable();
@@ -193,15 +190,6 @@ export class ArenaStore {
     setHasTurn(next) {
       this._hasTurn.next(next);
     }
-
-    getEnergyTrade() {
-      return this.energyTrade;
-    }
-
-    setEnergyTrade(next) {
-      this._energyTrade.next(next);
-    }
-
     getActiveCharacterPosition() {
       return this.activeCharacterPosition;
     }
@@ -327,20 +315,22 @@ export class ArenaStore {
         if (msg){
           let mtp = msg.type;
       
-          if (mtp === "INIT") {
-            this.handleInitResponse(msg);
-          } else if (mtp === "CCHECK") {
-            this.handleCostCheckResponse(msg);
-          } else if (mtp === "TCHECK") {
-            this.handleTargetCheckResponse(msg);
-          } else if (mtp === "ETRADE") {
-            this.handleEnergyTradeResponse(msg);
-          } else if (mtp === "END") {
-            this.handleTurnEndResponse(msg);
-          } else if (mtp === "SURRENDER") {
-            this.handleSurrenderResponse(msg);
-          } else {
-            console.log("Unrecognized Message, Type = " + mtp);
+          if (mtp) {
+            if (mtp === "INIT") {
+              this.handleInitResponse(msg);
+            } else if (mtp === "CCHECK") {
+              this.handleCostCheckResponse(msg);
+            } else if (mtp === "TCHECK") {
+              this.handleTargetCheckResponse(msg);
+            } else if (mtp === "ETRADE") {
+              this.handleEnergyTradeResponse(msg);
+            } else if (mtp === "END") {
+              this.handleTurnEndResponse(msg);
+            } else if (mtp === "SURRENDER") {
+              this.handleSurrenderResponse(msg);
+            } else {
+              console.log("Unrecognized Message, Type = " + mtp);
+            }
           }
         }
       })
@@ -352,7 +342,6 @@ export class ArenaStore {
       if (this.getIsPlayerOne()){
         this.setPlayer(msg.playerOne);
         this.setOpponent(msg.playerTwo);
-        this.setBattle(msg.battle);
 
         let holder : Array<Character> = new Array();
         holder.push(msg.characters[3]);
@@ -363,13 +352,12 @@ export class ArenaStore {
         this.setBattleAllies(msg.battle.playerOneTeam);
         this.setBattleEnemies(msg.battle.playerTwoTeam);
 
-        this.setTurnEnergy(msg.battle.playerOneEnergy);
+        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
         this.setSpentEnergy(this.newMap());
       
       } else {
         this.setPlayer(msg.playerTwo);
         this.setOpponent(msg.playerOne);
-        this.setBattle(msg.battle);
 
         let holder : Array<Character> = new Array();
         holder.push(msg.characters[0]);
@@ -380,11 +368,12 @@ export class ArenaStore {
         this.setBattleAllies(msg.battle.playerTwoTeam);
         this.setBattleEnemies(msg.battle.playerOneTeam);
 
-        this.setTurnEnergy(msg.battle.playerOneEnergy);
+        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
         this.setSpentEnergy(this.newMap()); 
       }
 
       this.setTempAllies(Object.create(this.allies));
+      this.setBattle(msg.battle);
 
       if ( (msg.battle.playerOneStart && this.getIsPlayerOne()) || (!msg.battle.playerOneStart && !this.getIsPlayerOne()) ) {
         this.setHasTurn(true);
@@ -395,15 +384,14 @@ export class ArenaStore {
 
 
     handleEnergyTradeResponse(msg) {
-      this.setBattle(msg.battle);
       if (this.getIsPlayerOne()) {
-        this.setTurnEnergy(msg.battle.playerOneEnergy);
+        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
       } else {
-        this.setTurnEnergy(msg.battle.playerTwoEnergy);
+        this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
       }
       
       this.setSpentEnergy(this.newMap());
-      this.setEnergyTrade(null);
+      this.setBattle(msg.battle);
     }
     
     handleCostCheckResponse(msg) {
@@ -426,9 +414,6 @@ export class ArenaStore {
     
 
     handleTurnEndResponse(msg) {
-
-      this.setBattle(msg.battle);
-
       let team;
       let enemyTeam;
 
@@ -437,14 +422,18 @@ export class ArenaStore {
         enemyTeam = msg.battle.playerTwoTeam;
         this.setBattleAllies(team);
         this.setBattleEnemies(enemyTeam);
-        this.setTurnEnergy(msg.battle.playerOneEnergy);
+        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
+        this.setSpentEnergy(this.newMap());
       } else {
         team = msg.battle.playerTwoTeam;
         enemyTeam = msg.battle.playerOneTeam;
         this.setBattleAllies(team);
         this.setBattleEnemies(enemyTeam);
-        this.setTurnEnergy(msg.battle.playerTwoEnergy);
+        this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
+        this.setSpentEnergy(this.newMap());
       }
+      
+      this.setBattle(msg.battle);
 
       let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
       let defeat = team[0].dead && team[1].dead && team[2].dead;
@@ -481,9 +470,9 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(JSON.stringify(msg));
     }
 
-    sendCostCheck(allyAbilities, chosenAbilities) {
-      let costCheckDTO = {
-        allyAbilities : allyAbilities,
+    sendCostCheck(allyCosts, chosenAbilities) {
+      let costCheckDTO : CostCheckDTO = {
+        allyCosts : allyCosts,
         chosenAbilities : chosenAbilities
       }
       
@@ -506,7 +495,7 @@ export class ArenaStore {
       )
     }
 
-    sendEnergyTrade(energySpent : Map<String, Number>, energyGained : string){
+    sendEnergyTrade(energySpent : Map<String, number>, energyGained : string){
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "ENERGY_TRADE",
@@ -528,9 +517,17 @@ export class ArenaStore {
     }
       
     sendTurnEndMessage(spentEnergy, abilityDTOs, finalEffects) {
+      console.log(spentEnergy);
+      let enrgy = {
+        "STRENGTH": spentEnergy.get("STRENGTH"),
+        "DEXTERITY": spentEnergy.get("DEXTERITY"),
+        "ARCANA": spentEnergy.get("ARCANA"),
+        "DIVINITY": spentEnergy.get("DIVINITY")
+      }
+      console.log(enrgy);
 
       let battleTurnDTO : BattleTurnDTO = {
-        spentEnergy : spentEnergy,
+        spentEnergy : enrgy,
         abilities : abilityDTOs,
         effects : finalEffects
       }
@@ -540,6 +537,8 @@ export class ArenaStore {
         playerId: this.player.id,
         battleTurnDTO: battleTurnDTO
       }
+
+      console.log(payload);
 
       this.arenaService.sendWebsocketMessage(
         JSON.stringify(payload)
@@ -571,20 +570,30 @@ export class ArenaStore {
 
     
 	newMap() {
-		let temp : Map<string, Number> = new Map();
-		temp["STRENGTH"]=0;
-		temp["DEXTERITY"]=0;
-		temp["ARCANA"]=0;
-		temp["DIVINITY"]=0;
+    let temp : Map<string, number> = new Map();
+    temp.set("STRENGTH", 0);
+    temp.set("DEXTERITY", 0);
+    temp.set("ARCANA", 0);
+    temp.set("DIVINITY", 0);
 		return temp;
 	}
 
-	copyMap(a : Map<string, Number>) {
-		let temp : Map<string, Number> = new Map();
-		temp["STRENGTH"]=a["STRENGTH"];
-		temp["DEXTERITY"]=a["DEXTERITY"];
-		temp["ARCANA"]=a["ARCANA"];
-		temp["DIVINITY"]=a["DIVINITY"];
+	copyMap(a : Map<string, number>) {
+		let temp : Map<string, number> = new Map();
+		temp.set("STRENGTH", a["STRENGTH"]);
+		temp.set("DEXTERITY", a["DEXTERITY"]);
+		temp.set("ARCANA", a["ARCANA"]);
+		temp.set("DIVINITY", a["DIVINITY"]);
+		return temp;
+  }
+  
+
+	copyMapForBack(a : Map<string, number>) {
+		let temp : Map<string, number> = new Map();
+		temp["STRENGTH"] = a["STRENGTH"];
+		temp["DEXTERITY"] = a["DEXTERITY"];
+		temp["ARCANA"] = a["ARCANA"];
+		temp["DIVINITY"] = a["DIVINITY"];
 		return temp;
   }
 

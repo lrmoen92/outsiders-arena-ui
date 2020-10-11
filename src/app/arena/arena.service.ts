@@ -38,13 +38,6 @@ export class ArenaService {
 
     connectByArenaId(arenaId) {
       this.connect(arenaId);
-      this.websocket.onopen = () => {
-        this.handleMessage();
-        this.webSocketOpen();
-      }
-      this.websocket.onerror = (e) => {
-        console.log(e);
-      }
     }
 
     webSocketOpen() {
@@ -54,6 +47,13 @@ export class ArenaService {
     connect(arenaId) {
       this.websocket = new WebSocket(URLS.battleSocket + arenaId);
       console.log("Connected to Arena: " + arenaId);
+      this.websocket.onopen = () => {
+        this.handleMessage();
+        this.webSocketOpen();
+      }
+      this.websocket.onerror = (e) => {
+        console.log(e);
+      }
     }
 
     disconnect() {

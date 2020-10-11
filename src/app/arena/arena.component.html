@@ -45,7 +45,7 @@
       <div id="centerPanel">
 
           <div id="timer">
-            <countdown [config]="config" (event)="handleTimerEvent($event)">
+            <countdown id="countdown" [config]="config" (event)="handleTimerEvent($event)">
   
             </countdown>
             <div id="volumeControls">
@@ -139,7 +139,7 @@
           <div class="ally-info">
             <div *ngFor="let ally of battleAllies" class="battle-allies">
               <div class="ally-info-portrait">
-                <img [ngStyle]="getCharacterStyle(ally.position)" [src]="imgPrefix + getPortraits(ally.characterId)" class="ally-portrait" (click)="clickTarget(ally.position)">        
+                <img [ngStyle]="getCharacterPortrait(ally).style" [src]="getCharacterPortrait(ally).url" class="ally-portrait" (click)="clickTarget(ally.position)">        
                 <div>
                   {{ ally.hp }} / 100
                 </div>
@@ -175,7 +175,7 @@
               </div>
 
               <div class="enemy-info-portrait">
-                <img [ngStyle]="getCharacterStyle(enemy.position)" [src]="this.imgPrefix + getPortraits(enemy.characterId)"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
+                <img [ngStyle]="getCharacterPortrait(enemy).style" [src]="getCharacterPortrait(enemy).url"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
                 <div>
                   {{ enemy.hp }} / 100
                 </div>
