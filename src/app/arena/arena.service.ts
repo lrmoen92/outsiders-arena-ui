@@ -46,7 +46,7 @@ export class ArenaService {
 
     connect(arenaId) {
       this.websocket = new WebSocket(URLS.battleSocket + arenaId);
-      console.log("Connected to Arena: " + arenaId);
+      console.log("::Connected to Arena: " + arenaId);
       this.websocket.onopen = () => {
         this.handleMessage();
         this.webSocketOpen();
@@ -60,7 +60,7 @@ export class ArenaService {
       if (this.websocket != null) {
           this.websocket.close();
           this.websocket = null;
-          console.log("Disconnected");
+          console.log("::Disconnected");
       }
     }
 

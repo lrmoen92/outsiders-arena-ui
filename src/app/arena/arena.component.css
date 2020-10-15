@@ -297,7 +297,7 @@ img {
 #header {
     position : fixed;
     left : 10%;
-    width : 100%;
+    width : 90%;
     height : 20%;
 }
 
@@ -305,7 +305,7 @@ img {
     position : fixed;
     left : 10%;
     top : 30%;
-    width : 100%;
+    width : 90%;
     height : 40%;
 }
 
@@ -336,7 +336,7 @@ img {
     position : fixed;
     left : 10%;
     top : 80%;
-    width : 100%;
+    width : 90%;
     height : 30%;
 }
 

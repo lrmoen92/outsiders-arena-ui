@@ -16,8 +16,10 @@ export class ArenaStore {
     allies : Array<Character>;
 
     isPlayerOne : boolean;
+    _isPlayerOne: BehaviorSubject<boolean> = new BehaviorSubject(null);
+    isPlayerOneSub: Observable<boolean> = this._isPlayerOne.asObservable();
 
-    _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(false);
+    _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(null);
     hasTurn: Observable<boolean> = this._hasTurn.asObservable();
 
     _victory: BehaviorSubject<boolean> = new BehaviorSubject(false);
@@ -62,14 +64,17 @@ export class ArenaStore {
     _chosenAbilities: BehaviorSubject<Array<AbilityTargetDTO>> = new BehaviorSubject([]);
     chosenAbilities: Observable<Array<AbilityTargetDTO>> = this._chosenAbilities.asObservable();
     
-    _availableAbilities: BehaviorSubject<Map<string, number>> = new BehaviorSubject(new Map());
-    availableAbilities: Observable<Map<string, number>> = this._availableAbilities.asObservable();
+    _availableAbilities: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
+    availableAbilities: Observable<Array<number>> = this._availableAbilities.asObservable();
     
     _availableTargets: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableTargets: Observable<Array<number>> = this._availableTargets.asObservable();
 
     /// GETTERS SETTERS////
 
+    getIsPlayerOneSub() {
+      return this.isPlayerOneSub;
+    }
 
     getVictory() {
       return this.victory;
@@ -215,6 +220,7 @@ export class ArenaStore {
 
     setIsPlayerOne(isPlayerOne) {
       this.isPlayerOne = isPlayerOne;
+      this._isPlayerOne.next(isPlayerOne);
     }
 
     getIsPlayerOne() {
@@ -316,6 +322,7 @@ export class ArenaStore {
           let mtp = msg.type;
       
           if (mtp) {
+            console.log("::Got Message - Type = " + mtp);
             if (mtp === "INIT") {
               this.handleInitResponse(msg);
             } else if (mtp === "CCHECK") {
@@ -329,7 +336,7 @@ export class ArenaStore {
             } else if (mtp === "SURRENDER") {
               this.handleSurrenderResponse(msg);
             } else {
-              console.log("Unrecognized Message, Type = " + mtp);
+              console.log("Unrecognized Message");
             }
           }
         }
@@ -368,18 +375,19 @@ export class ArenaStore {
         this.setBattleAllies(msg.battle.playerTwoTeam);
         this.setBattleEnemies(msg.battle.playerOneTeam);
 
-        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
+        this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
         this.setSpentEnergy(this.newMap()); 
       }
 
       this.setTempAllies(Object.create(this.allies));
-      this.setBattle(msg.battle);
 
       if ( (msg.battle.playerOneStart && this.getIsPlayerOne()) || (!msg.battle.playerOneStart && !this.getIsPlayerOne()) ) {
         this.setHasTurn(true);
       } else {
         this.setHasTurn(false);
       }
+      
+      this.setBattle(msg.battle);
     }
 
 
@@ -395,6 +403,7 @@ export class ArenaStore {
     }
     
     handleCostCheckResponse(msg) {
+      console.log(msg);
       this.setAvailableAbilities(msg.usable);
     }
 
@@ -432,8 +441,6 @@ export class ArenaStore {
         this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
         this.setSpentEnergy(this.newMap());
       }
-      
-      this.setBattle(msg.battle);
 
       let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
       let defeat = team[0].dead && team[1].dead && team[2].dead;
@@ -453,12 +460,15 @@ export class ArenaStore {
         console.log("They ended their turn");
         this.setHasTurn(true);
       }
+      
+      this.setBattle(msg.battle);
     }
 
     // maybe these live in the component and facade back through the store?  makes the most sense.
 
 
     sendMatchMakingMessage() {
+      console.log("::Sent MATCH_MAKING Message");
       let msg = {
         type: "MATCH_MAKING",
         char1: this.allies[0].id,
@@ -471,6 +481,7 @@ export class ArenaStore {
     }
 
     sendCostCheck(allyCosts, chosenAbilities) {
+      console.log("::Sent COST_CHECK Message");
       let costCheckDTO : CostCheckDTO = {
         allyCosts : allyCosts,
         chosenAbilities : chosenAbilities
@@ -486,6 +497,7 @@ export class ArenaStore {
     }
 
     sendTargetCheck(dto : AbilityTargetDTO){
+      console.log("::Sent TARGET_CHECK Message");
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "TARGET_CHECK",
@@ -496,17 +508,28 @@ export class ArenaStore {
     }
 
     sendEnergyTrade(energySpent : Map<String, number>, energyGained : string){
+      console.log("::Sent ENERGY_TRADE Message");
+      console.log(energySpent);
+      let enrgy = {
+        "STRENGTH": energySpent.get("STRENGTH"),
+        "DEXTERITY": energySpent.get("DEXTERITY"),
+        "ARCANA": energySpent.get("ARCANA"),
+        "DIVINITY": energySpent.get("DIVINITY")
+      }
+      console.log(enrgy);
+
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "ENERGY_TRADE",
           playerId: this.player.id,
-          spent: energySpent,
+          spent: enrgy,
           chosen: energyGained
         })
       )
     }
 
     surrender() {
+      console.log("::Sent SURRENDER Message");
       // just manually kill my team and send turn end
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
@@ -517,6 +540,7 @@ export class ArenaStore {
     }
       
     sendTurnEndMessage(spentEnergy, abilityDTOs, finalEffects) {
+      console.log("::Sent TURN_END Message");
       console.log(spentEnergy);
       let enrgy = {
         "STRENGTH": spentEnergy.get("STRENGTH"),
