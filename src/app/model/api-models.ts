@@ -3,6 +3,29 @@ export class Player {
     avatarUrl : string;
     displayName : string;
     level : number;
+    credentials : PlayerCredentials;
+    xp : number;
+    missionIdsCompleted : Array<number>;
+    characterIdsUnlocked : Array<number>;
+    missionProgress : Array<MissionProgress>;
+}
+
+export class MissionRequirement {
+    amount : number;
+	
+	missionId : number;
+	
+	userFaction : string;
+	targetFaction : string;
+}
+
+export class MissionProgress {
+    requirements : Array<MissionRequirement>;
+}
+
+export class PlayerCredentials {
+    email : string;
+    password : string;
 }
 
 export class Character {

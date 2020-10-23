@@ -5,12 +5,9 @@ import { URLS, serverPrefix } from 'src/app/utils/constants';
 import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
-import { CharacterService } from '../character/character.service';
-import { ArenaService } from './arena.service';
-import { LoginService } from '../login/login.service';
-import { LoginStore } from '../login/login.store';
-import { CharacterStore } from '../character/character.store';
-import { ArenaStore } from './arena.store';
+import { LoginStore } from '../utils/login.store';
+import { ArenaStore } from '../utils/arena.store';
+import { CharacterStore } from '../utils/character.store';
 
 @Component({
   selector: 'arena-root',
@@ -44,6 +41,7 @@ export class ArenaComponent implements OnInit {
 	player : Player;
 	opponent : Player;
 	allCharacters : Array<Character>;
+	myCharacters : Array<Character>;
 
 	hasTurn : boolean = false;
 	isPlayerOne : Boolean = false;
@@ -154,6 +152,14 @@ export class ArenaComponent implements OnInit {
 		});
 		this.arenaStore.getOpponent().subscribe( x => {
 			this.opponent = x;
+		});
+
+		this.arenaStore.getPlayer().subscribe( x => {
+			for (let c of this.allCharacters) {
+				if (x.characterIdsUnlocked.includes(c.id)) {
+					this.myCharacters.push(c);
+				}
+			}
 		});
 
 		this.arenaStore.getBattle().subscribe(

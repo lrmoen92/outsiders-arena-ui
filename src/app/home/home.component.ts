@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { Character } from 'src/app/model/api-models';
-import { CharacterService } from '../character/character.service';
+import { CharacterService } from '../utils/character.service';
 
 @Component({
   selector: 'home-root',

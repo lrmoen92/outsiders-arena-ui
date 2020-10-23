@@ -24,8 +24,8 @@
         <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
       </div>
     </div>
-    <div id="character-select" *ngIf="allCharacters">
-      <img *ngFor="let char of allCharacters" (click)="addCharacter(char.id)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
+    <div id="character-select" *ngIf="myCharacters">
+      <img *ngFor="let char of myCharacters" (click)="addCharacter(char.id)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
       <div>
         TEAM:
       </div>

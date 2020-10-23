@@ -12,7 +12,9 @@ export class ArenaStore {
 
     arenaId : number;
 
-    player : Player;
+    _player : BehaviorSubject<Player> = new BehaviorSubject(null);
+    player : Observable<Player> = this._player.asObservable();
+    
     allies : Array<Character>;
 
     isPlayerOne : boolean;
@@ -235,8 +237,8 @@ export class ArenaStore {
       return this.player;
     }
 
-    setPlayer(player) {
-      this.player = player;
+    setPlayer(next) {
+      this._player.next(next);
     }
 
     constructor(arenaService : ArenaService) {

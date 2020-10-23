@@ -2,8 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, } from '@angular/core';
 import { MatOptionParentComponent } from '@angular/material/core';
 import { Character } from 'src/app/model/api-models';
-import { LoginStore } from '../login/login.store';
-import { CharacterStore } from './character.store';
+import { CharacterStore } from '../utils/character.store';
+import { LoginStore } from '../utils/login.store';
 
 @Component({
   selector: 'character-root',

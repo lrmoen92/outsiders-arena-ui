@@ -1,10 +1,6 @@
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Player } from '../model/api-models';
-import { LoginService } from './login.service';
-import { CharacterService } from '../character/character.service';
-import { LoginStore } from './login.store';
-import { CharacterStore } from '../character/character.store';
+import { LoginStore } from '../utils/login.store';
 
 @Component({
   selector: 'login-root',

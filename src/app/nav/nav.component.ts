@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoginStore } from '../login/login.store';
+import { LoginStore } from '../utils/login.store';
 
 @Component({
   selector: 'nav-root',
