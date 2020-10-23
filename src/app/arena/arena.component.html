@@ -4,7 +4,7 @@
   <div *ngIf="!inBattle" id="pre-battle">
 
     <div>
-      <div class="playerInfo">
+      <div *ngIf="player" class="playerInfo">
         <img [src]="player.avatarUrl" id="player-portrait">
         <br>
         {{ player.displayName }}

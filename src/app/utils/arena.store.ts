@@ -14,11 +14,13 @@ export class ArenaStore {
 
     _player : BehaviorSubject<Player> = new BehaviorSubject(null);
     player : Observable<Player> = this._player.asObservable();
+    playerSub : Player;
     
     allies : Array<Character>;
 
     isPlayerOne : boolean;
     _isPlayerOne: BehaviorSubject<boolean> = new BehaviorSubject(null);
+
     isPlayerOneSub: Observable<boolean> = this._isPlayerOne.asObservable();
 
     _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(null);
@@ -237,8 +239,13 @@ export class ArenaStore {
       return this.player;
     }
 
+    getCurrentPlayer() {
+      return this.playerSub;
+    }
+
     setPlayer(next) {
       this._player.next(next);
+      this.playerSub = next;
     }
 
     constructor(arenaService : ArenaService) {
@@ -347,7 +354,7 @@ export class ArenaStore {
 
 
     handleInitResponse(msg) {
-      this.setIsPlayerOne(msg.battle.playerIdOne === this.player.id);
+      this.setIsPlayerOne(msg.battle.playerIdOne === this.playerSub.id);
       if (this.getIsPlayerOne()){
         this.setPlayer(msg.playerOne);
         this.setOpponent(msg.playerTwo);
@@ -416,7 +423,7 @@ export class ArenaStore {
 
     handleSurrenderResponse(msg) {
       // TODO: set victory above so it cascades down to component
-      if (this.player.id === msg.playerId) {
+      if (this.playerSub.id === msg.playerId) {
         this._victory.next(false);
       } else {
         this._victory.next(true);
@@ -455,7 +462,7 @@ export class ArenaStore {
         this.setDefeat(true);
       }
 
-      if (msg.playerId === this.player.id) {
+      if (msg.playerId === this.playerSub.id) {
         console.log("You ended your turn");
         this.setHasTurn(false);
       } else {
@@ -476,7 +483,7 @@ export class ArenaStore {
         char1: this.allies[0].id,
         char2: this.allies[1].id,
         char3: this.allies[2].id,
-        playerId: this.player.id,
+        playerId: this.playerSub.id,
         arenaId: this.arenaId
       };
       this.arenaService.sendWebsocketMessage(JSON.stringify(msg));
@@ -491,7 +498,7 @@ export class ArenaStore {
       
       const payload = {
         type: "COST_CHECK",
-        playerId: this.player.id,
+        playerId: this.playerSub.id,
         costCheckDTO: costCheckDTO
       };
 
@@ -503,7 +510,7 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "TARGET_CHECK",
-          playerId: this.player.id,
+          playerId: this.playerSub.id,
           abilityTargetDTO: dto
         })
       )
@@ -523,7 +530,7 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "ENERGY_TRADE",
-          playerId: this.player.id,
+          playerId: this.playerSub.id,
           spent: enrgy,
           chosen: energyGained
         })
@@ -536,7 +543,7 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "SURRENDER",
-          playerId: this.player.id
+          playerId: this.playerSub.id
         })
       )
     }
@@ -560,7 +567,7 @@ export class ArenaStore {
   
       const payload = {
         type: "TURN_END",
-        playerId: this.player.id,
+        playerId: this.playerSub.id,
         battleTurnDTO: battleTurnDTO
       }
 

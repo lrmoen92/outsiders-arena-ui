@@ -131,6 +131,8 @@ export class ArenaComponent implements OnInit {
 	}
 
 	ngOnInit() {
+		this.arenaStore.disconnect();
+		this.config = this.countdownConfigFactory();
 
 		this.characterStore.getCharacters().subscribe( x => {
 			if (x) {
@@ -144,22 +146,28 @@ export class ArenaComponent implements OnInit {
 				}
 			}
 		});
-		this.arenaStore.disconnect();
-		this.config = this.countdownConfigFactory();
 		this.loginStore.getPlayer().subscribe( x => {
-			this.player = x;
-			this.arenaStore.setPlayer(this.player);
-		});
-		this.arenaStore.getOpponent().subscribe( x => {
-			this.opponent = x;
-		});
+			this.arenaStore.setPlayer(x);
 
-		this.arenaStore.getPlayer().subscribe( x => {
+			console.log(x);
+			this.player = x;
+			if (!this.myCharacters) {
+				this.myCharacters = [];
+			}
 			for (let c of this.allCharacters) {
 				if (x.characterIdsUnlocked.includes(c.id)) {
 					this.myCharacters.push(c);
 				}
 			}
+		});
+
+
+		this.arenaStore.getOpponent().subscribe( x => {
+			this.opponent = x;
+		});
+
+		this.arenaStore.getPlayer().subscribe( x => {
+
 		});
 
 		this.arenaStore.getBattle().subscribe(
