@@ -1,10 +1,9 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, } from '@angular/core';
 import { Battle, Character, Player, Portrait } from 'src/app/model/api-models';
-import { ArenaStore } from '../utils/arena.store';
-import { CharacterStore } from '../utils/character.store';
-import { serverPrefix } from '../utils/constants';
-import { LoginStore } from '../utils/login.store';
+import { ArenaStore } from '../../utils/arena.store';
+import { CharacterStore } from '../../utils/character.store';
+import { serverPrefix } from '../../utils/constants';
+import { LoginStore } from '../../utils/login.store';
 import { take } from 'rxjs/operators'
 
 @Component({
@@ -50,7 +49,7 @@ export class BattleComponent implements OnInit, OnDestroy {
 
     // this.arenaStore.disconnect();
     
-		this.characterStore.getCharacters().pipe(take(2)).subscribe( 
+		this.characterStore.getCharacters().pipe(take(1)).subscribe( 
       x => {
         console.log(x);
         if (x) {
@@ -69,23 +68,25 @@ export class BattleComponent implements OnInit, OnDestroy {
 
       },
       () => {
-        this.loginStore.getPlayer().subscribe( x => {
-          if (x) {
-            this.player = x;
-    
-            console.log(x);
-            if (!this.myCharacters) {
-              this.myCharacters = [];
-            }
-            for (let c of this.allCharacters) {
-              if (x.characterIdsUnlocked.includes(c.id)) {
-                this.myCharacters.push(c);
-              }
-            }
-          }
-        });
+
       }
     );
+
+    this.loginStore.getPlayer().subscribe( x => {
+      if (x) {
+        this.player = x;
+
+        console.log(x);
+        if (!this.myCharacters) {
+          this.myCharacters = [];
+        }
+        for (let c of this.allCharacters) {
+          if (x.characterIdsUnlocked.includes(c.id)) {
+            this.myCharacters.push(c);
+          }
+        }
+      }
+    });
     
     this.arenaStore.getInBattle().subscribe( x => {
       if (x) {

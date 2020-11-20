@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { Character } from 'src/app/model/api-models';
 import { CharacterService } from './character.service';
 
@@ -10,26 +11,43 @@ export class CharacterStore {
 
   characterService : CharacterService;
 
-  _allCharacters: BehaviorSubject<Array<Character>> = new BehaviorSubject(null);
+  charactersLoaded : boolean = false;
+
+  _allCharacters: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
   allCharacters: Observable<Array<Character>> = this._allCharacters.asObservable();
 
   constructor(characterService: CharacterService) {
     this.characterService = characterService;
-    this.characterService.initCharacters().subscribe(
-      x => {
-        this.setCharacters(<Array<Character>> x)
-      },
-      y => {},
-      () => {},
-    );
+  }
+
+  setCharactersLoaded(b : boolean) {
+    this.charactersLoaded = b;
   }
 
   setCharacters(chars : Array<Character>) {
     this._allCharacters.next(chars);
-    // this._allCharacters.unsubscribe();
+  }
+
+  initCharacters() {
+    this.characterService.initCharacters().pipe(take(1)).subscribe(
+      x => {
+        this.setCharacters(<Array<Character>> x);
+      },
+      y => {
+
+      },
+      () => {
+        this.setCharactersLoaded(true);
+      }
+    );
   }
 
   getCharacters() : Observable<Array<Character>> {
+
+    if (!this.charactersLoaded) {
+      this.initCharacters();
+    }
+
     return this.allCharacters;
   }
 }

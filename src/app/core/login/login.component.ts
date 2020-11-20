@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { LoginStore } from '../utils/login.store';
+import { LoginStore } from 'src/app/utils/login.store';
 
 @Component({
   selector: 'login-root',
@@ -26,24 +26,15 @@ export class LoginComponent {
   // Login OR Create User if does not exist.
   // TODO: make this a real login
   login() {
-    let disp = this.playerName || "NPC";
-    let aurl = this.playerAvatarUrl || "https://i.imgur.com/sdOs51i.jpg";
+    let disp = this.playerName || "NPC " + (Math.floor(Math.random() * 1000000));
+    let dndIcon = "https://i.imgur.com/sdOs51i.jpg";
+    
+    let aurl = this.playerAvatarUrl || "https://tinyurl.com/y5lpta2s";
     let req = {
         "displayName": disp,
         "avatarUrl": aurl
     };
     this.loginStore.loginPlayer(req);
-    // .subscribe(
-    //   x => {
-    //     this.service.setPlayer(<Player> x);
-    //   },
-    //   y => {
-
-    //   },
-    //   () => {
-        
-    //   }
-    // )
   };
 
 }

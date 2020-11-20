@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, } from '@angular/core';
-import { MatOptionParentComponent } from '@angular/material/core';
+import { take } from 'rxjs/operators';
 import { Character } from 'src/app/model/api-models';
-import { CharacterStore } from '../utils/character.store';
-import { LoginStore } from '../utils/login.store';
+import { CharacterStore } from '../../utils/character.store';
+import { LoginStore } from '../../utils/login.store';
 
 @Component({
   selector: 'character-root',
@@ -29,7 +29,7 @@ export class CharacterComponent implements OnInit {
   }
   
   ngOnInit() {
-    this.characterStore.getCharacters().subscribe(x => {
+    this.characterStore.getCharacters().pipe(take(1)).subscribe(x => {
       this.allCharacters = x;
     })
   }

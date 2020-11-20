@@ -10,19 +10,18 @@ import { CountdownComponent, CountdownModule } from 'ngx-countdown';
 import { FormsModule, ReactiveFormsModule }   from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { LoginComponent } from './login/login.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { RouterModule, Routes } from '@angular/router';
 import { PortraitPipe } from './utils/portrait.pipe';
 import { AbilityPipe } from './utils/ability.pipe';
-import { CharacterComponent } from './character/character.component';
-import { HomeComponent } from './home/home.component';
-import { MissionComponent } from './mission/mission.component';
-import { NavComponent } from './nav/nav.component';
-import { ArenaComponent } from './battle/arena/arena.component';
-import { BattleComponent } from './battle/battle.component';
-
+import { ArenaComponent } from './core/battle/arena/arena.component';
+import { BattleComponent } from './core/battle/battle.component';
+import { CharacterComponent } from './core/character/character.component';
+import { HomeComponent } from './core/home/home.component';
+import { LoginComponent } from './core/login/login.component';
+import { MissionComponent } from './core/mission/mission.component';
+import { NavComponent } from './core/nav/nav.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },

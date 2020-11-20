@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { Player } from 'src/app/model/api-models';
 import { LoginService } from './login.service';
 
@@ -42,13 +43,16 @@ export class LoginStore {
   }
 
   loginPlayer(req) {
-    this.loginService.initPlayer(req).subscribe(
+    this.loginService.initPlayer(req).pipe(take(1)).subscribe(
       x => {
         this.setPlayer(x);
-        this.setLoggedIn(true);
       },
       y => {},
-      () => {},
+      () => {
+        this.setLoggedIn(true);
+
+        // call for and get available characters from here??
+      },
     );
   }
 }

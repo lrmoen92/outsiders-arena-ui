@@ -30,7 +30,9 @@
     </div>
 </div>
 
-<arena-root [inBattle]="inBattle"
-            [characterPortraits]="characterPortraits">
+<div *ngIf="inBattle" id="in-battle">
+    <arena-root [characterPortraits]="characterPortraits"
+                [player]="player">
 
-</arena-root>
+    </arena-root>
+</div>

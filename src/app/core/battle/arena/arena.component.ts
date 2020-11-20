@@ -10,8 +10,8 @@ import { CharacterStore } from 'src/app/utils/character.store';
 import { LoginStore } from 'src/app/utils/login.store';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { interval } from 'rxjs';
-import { map } from 'rxjs/operators'
+import { interval, pipe } from 'rxjs';
+import { map, takeUntil } from 'rxjs/operators'
 
 @Component({
   selector: 'arena-root',
@@ -24,17 +24,16 @@ export class ArenaComponent implements OnInit, AfterViewChecked {
 	// ------ PROPERTIES ----------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
-	@ViewChild('countdown', {static: false}) private 
-	countdown: CountdownComponent;
-	config: CountdownConfig;
+	// @ViewChild('countdown', {static: false}) private 
+	// countdown: CountdownComponent;
+	// config: CountdownConfig;
 
-	time: number;
+	// COUNTDOWN STUFF
+	timeLeft: number = 60;
+
 	
     _countdownReset: BehaviorSubject<boolean> = new BehaviorSubject(false);
     countdownReset: Observable<boolean> = this._countdownReset.asObservable();
-
-	@Input()
-	inBattle : boolean = false;
 
 	loginStore : LoginStore;
 	characterStore : CharacterStore;
@@ -43,6 +42,8 @@ export class ArenaComponent implements OnInit, AfterViewChecked {
 	opponentName : string;
 
 	battle : Battle;
+
+	@Input()
 	player : Player;
 	opponent : Player;
 
@@ -130,13 +131,14 @@ export class ArenaComponent implements OnInit, AfterViewChecked {
 	}
 
 	ngOnInit() {
-		this.config = this.countdownConfigFactory();
+		// this.config = this.countdownConfigFactory();
+
 		
-		this.arenaStore.getPlayer().subscribe( x => {
-			if (x) {
-				this.player = x;
-			}
-		})
+		// this.arenaStore.getPlayer().subscribe( x => {
+		// 	if (x) {
+		// 		this.player = x;
+		// 	}
+		// })
 
 		this.arenaStore.getOpponent().subscribe( x => {
 			if (x) {
@@ -374,43 +376,51 @@ export class ArenaComponent implements OnInit, AfterViewChecked {
 	// ------ TIMER --------------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
+	private clock: Observable<number>;
+	private _restart: BehaviorSubject<boolean> = new BehaviorSubject(null);
+	private restart: Observable<boolean> = this._restart.asObservable();
+
+	getClock(): Observable<number> {
+		this.clock = interval(1000);
+		return this.clock;
+	}
+
 	startTimer() {
-		interval(1000).pipe(
-		  map((x) => { 
-			  // MAKE this.time an observable, and subscribe to it ??
-			  this.time = 60 - x;
-		  })
-		);
+		this.getClock().pipe(takeUntil(this.restart)).subscribe(sec => {
+			console.log(sec);
+			this.timeLeft = 60 - sec;
+			console.log(this.timeLeft);
+			if (this.timeLeft === 60) {
+				this.onStart();
+			} else if (this.timeLeft === 8 && this.hasTurn) {
+				this.playAudio("timerlow");
+				// play warning sound
+			} else if (this.timeLeft === 0) {
+				this.onStop();
+				this._restart.next(true);
+				// end turn
+			}
+		});
 	}
 
-	stopTimer() {
+	// countdownConfigFactory(): CountdownConfig {
+	// 	return {
+	// 		notify: [8],
+	// 		format: `s`,
+	// 		leftTime: 60
+	// 	};
+	// }
 
-	}
-
-	resetTimer() {
-
-	}
-
-	countdownConfigFactory(): CountdownConfig {
-		return {
-			notify: [8],
-			format: `s`,
-			leftTime: 60
-		};
-	}
-
-	handleTimerEvent(event: CountdownEvent) {
-		console.log(event);
-		if(event.action === "start") {
-			this.onStart();
-		} else if (event.action === "restart" && this.hasTurn) { 
-			this.onStart();
-		} else if (event.action === "notify" && this.hasTurn) {
-			this.playAudio("timerlow");
-		} else if (event.action === "done") {
-			this.onStop();
-		}
-	}
+	// handleTimerEvent(event: CountdownEvent) {
+	// 	console.log(event);
+	// 	if(event.action === "start") {
+	// 	} else if (event.action === "restart" && this.hasTurn) { 
+	// 		this.onStart();
+	// 	} else if (event.action === "notify" && this.hasTurn) {
+	// 	} else if (event.action === "done") {
+	// 		this.onStop();
+	// 	}
+	// }
 
 	onStart() {
 		this.playAudio("yourturn");
