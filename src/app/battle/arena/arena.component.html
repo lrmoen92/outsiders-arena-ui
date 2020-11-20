@@ -1,39 +1,6 @@
 
-<div id="battleDiv">
-
-  <div *ngIf="!inBattle" id="pre-battle">
-
-    <div>
-      <div *ngIf="player" class="playerInfo">
-        <img [src]="player.avatarUrl" id="player-portrait">
-        <br>
-        {{ player.displayName }}
-      </div>
-
-      <div id="battle-select">
-        <button (click)="findLadderBattle()">
-          LADDER MATCH
-        </button>
-        <button (click)="findQuickBattle()">
-          QUICK MATCH
-        </button>
-        <button (click)="findPrivateBattle()">
-          PRIVATE MATCH
-        </button>
-        <br>
-        <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
-      </div>
-    </div>
-    <div id="character-select" *ngIf="myCharacters">
-      <img *ngFor="let char of myCharacters" (click)="addCharacter(char.id)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
-      <div>
-        TEAM:
-      </div>
-      <img *ngFor="let ally of allies" [src]="imgPrefix + ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
-    </div>
-  </div>
-
-  <div *ngIf="inBattle" id="battle">
+<div id="battleDiv" [hidden]="!inBattle">
+  <div id="battle">
     <div id="header">
 
       <div class="playerInfo">
@@ -53,9 +20,10 @@
                 <fa-icon [icon]="faVolumeUp"></fa-icon>
               </span>
               <div>
-                <countdown id="countdown" [config]="config" (event)="handleTimerEvent($event)">
+                TIME LEFT: {{ time }}
+                <!-- <countdown id="countdown" [config]="config" (event)="handleTimerEvent($event)">
       
-                </countdown>
+                </countdown> -->
               </div>
             </div>
           </div>
@@ -81,7 +49,7 @@
             <br>
 
             <div id="spent">
-              <div *ngIf="totalSpentEnergy > 0" class="left-text">TOTAL SPENT: {{ totalSpentEnergy }}</div>
+              <div class="left-text">TOTAL SPENT: {{ totalSpentEnergy }}</div>
               <span id="spent-divinity">
                 <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy, false)" class="energy-divinity energy"></div>
               </span>

@@ -5,13 +5,14 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import { FormsModule, ReactiveFormsModule }   from '@angular/forms';
 
-import { CountdownModule } from 'ngx-countdown';
+import { CountdownComponent, CountdownModule } from 'ngx-countdown';
 import { ArenaComponent } from './arena.component';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 @NgModule({
   declarations: [
-    ArenaComponent
+    ArenaComponent,
+    CountdownComponent
   ],
   imports: [
     BrowserModule,

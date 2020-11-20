@@ -1,0 +1,36 @@
+<div *ngIf="!inBattle" id="pre-battle">
+
+    <div>
+        <div *ngIf="player" class="playerInfo">
+            <img [src]="player.avatarUrl" id="player-portrait">
+        <br>
+            {{ player.displayName }}
+        </div>
+
+        <div id="battle-select">
+        <button (click)="findLadderBattle()">
+            LADDER MATCH
+        </button>
+        <button (click)="findQuickBattle()">
+            QUICK MATCH
+        </button>
+        <button (click)="findPrivateBattle()">
+            PRIVATE MATCH
+        </button>
+        <br>
+            <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
+        </div>
+    </div>
+    <div id="character-select" *ngIf="myCharacters">
+        <img *ngFor="let char of myCharacters" (click)="addCharacter(char.id)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
+            <div>
+                TEAM:
+            </div>
+        <img *ngFor="let ally of allies" [src]="imgPrefix + ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
+    </div>
+</div>
+
+<arena-root [inBattle]="inBattle"
+            [characterPortraits]="characterPortraits">
+
+</arena-root>

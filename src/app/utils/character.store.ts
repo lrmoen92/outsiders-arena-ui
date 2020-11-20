@@ -10,7 +10,7 @@ export class CharacterStore {
 
   characterService : CharacterService;
 
-  _allCharacters: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
+  _allCharacters: BehaviorSubject<Array<Character>> = new BehaviorSubject(null);
   allCharacters: Observable<Array<Character>> = this._allCharacters.asObservable();
 
   constructor(characterService: CharacterService) {
@@ -26,6 +26,7 @@ export class CharacterStore {
 
   setCharacters(chars : Array<Character>) {
     this._allCharacters.next(chars);
+    // this._allCharacters.unsubscribe();
   }
 
   getCharacters() : Observable<Array<Character>> {

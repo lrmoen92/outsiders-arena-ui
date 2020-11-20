@@ -118,7 +118,7 @@ export class BattleEffect extends Effect {
 
 export class Battle {
     id : number;
-    playerOneStart : Boolean;
+    playerOneStart : boolean;
     status : string;
     turn : number;
     arenaId : number;
@@ -128,5 +128,13 @@ export class Battle {
     playerTwoTeam : Array<CharacterInstance>;
     playerOneEnergy : Map<string, number>;
     playerTwoEnergy : Map<string, number>;
+}
+
+export class GameEnd {
+    victory: boolean;
+    playerId: number;
+    opponentId: number;
+    xpDiff: number;
+    missionProgress: boolean;
 }
 

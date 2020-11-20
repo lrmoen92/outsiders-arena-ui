@@ -5,7 +5,7 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import {MatTooltipModule} from '@angular/material/tooltip';
 
 
-import { CountdownModule } from 'ngx-countdown';
+import { CountdownComponent, CountdownModule } from 'ngx-countdown';
 
 import { FormsModule, ReactiveFormsModule }   from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
@@ -16,17 +16,18 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { RouterModule, Routes } from '@angular/router';
 import { PortraitPipe } from './utils/portrait.pipe';
 import { AbilityPipe } from './utils/ability.pipe';
-import { ArenaComponent } from './arena/arena.component';
 import { CharacterComponent } from './character/character.component';
 import { HomeComponent } from './home/home.component';
 import { MissionComponent } from './mission/mission.component';
 import { NavComponent } from './nav/nav.component';
+import { ArenaComponent } from './battle/arena/arena.component';
+import { BattleComponent } from './battle/battle.component';
 
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'arena', component: ArenaComponent },
+  { path: 'battle', component: BattleComponent },
   { path: 'mission', component: MissionComponent },
   { path: 'character', component: CharacterComponent }
   // { path: '**', component: PageNotFoundComponent },  // Wildcard route for a 404 page
@@ -37,6 +38,7 @@ const routes: Routes = [
     AppComponent,
     LoginComponent,
     AppComponent,
+    BattleComponent,
     ArenaComponent,
     NavComponent,
     CharacterComponent,

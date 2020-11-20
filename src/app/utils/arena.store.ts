@@ -21,16 +21,14 @@ export class ArenaStore {
     isPlayerOne : boolean;
     _isPlayerOne: BehaviorSubject<boolean> = new BehaviorSubject(null);
 
-    isPlayerOneSub: Observable<boolean> = this._isPlayerOne.asObservable();
+    _inBattle: BehaviorSubject<boolean> = new BehaviorSubject(null);
+    inBattle: Observable<boolean> = this._inBattle.asObservable();
 
     _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(null);
     hasTurn: Observable<boolean> = this._hasTurn.asObservable();
 
-    _victory: BehaviorSubject<boolean> = new BehaviorSubject(false);
-    victory: Observable<boolean> = this._victory.asObservable();
-
-    _defeat: BehaviorSubject<boolean> = new BehaviorSubject(false);
-    defeat: Observable<boolean> = this._defeat.asObservable();
+    _gameEnd: BehaviorSubject<boolean> = new BehaviorSubject(false);
+    gameEnd: Observable<boolean> = this._gameEnd.asObservable();
     
     _opponent: BehaviorSubject<Player> = new BehaviorSubject(null);
     opponent: Observable<Player> = this._opponent.asObservable();
@@ -44,57 +42,63 @@ export class ArenaStore {
     _enemies: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
     enemies: Observable<Array<Character>> = this._enemies.asObservable();
     
-    _battleAllies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
-    battleAllies: Observable<Array<CharacterInstance>> = this._battleAllies.asObservable();
+    // _battleAllies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
+    // battleAllies: Observable<Array<CharacterInstance>> = this._battleAllies.asObservable();
     
-    _battleEnemies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
-    battleEnemies: Observable<Array<CharacterInstance>> = this._battleEnemies.asObservable();
+    // _battleEnemies: BehaviorSubject<Array<CharacterInstance>> = new BehaviorSubject([]);
+    // battleEnemies: Observable<Array<CharacterInstance>> = this._battleEnemies.asObservable();
     
-    _turnEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
-    turnEnergy: Observable<Map<string, number>> = this._turnEnergy.asObservable();
+    // _turnEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
+    // turnEnergy: Observable<Map<string, number>> = this._turnEnergy.asObservable();
 
-    _spentEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
-    spentEnergy: Observable<Map<string, number>> = this._spentEnergy.asObservable();
+    // _spentEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
+    // spentEnergy: Observable<Map<string, number>> = this._spentEnergy.asObservable();
     
-    _turnEffects: BehaviorSubject<Array<BattleEffect>> = new BehaviorSubject([]);
-    turnEffects: Observable<Array<BattleEffect>> = this._turnEffects.asObservable();
+    // _turnEffects: BehaviorSubject<Array<BattleEffect>> = new BehaviorSubject([]);
+    // turnEffects: Observable<Array<BattleEffect>> = this._turnEffects.asObservable();
     
-    _activeCharacterPosition: BehaviorSubject<number> = new BehaviorSubject(null);
-    activeCharacterPosition: Observable<number> = this._activeCharacterPosition.asObservable();
+    // _activeCharacterPosition: BehaviorSubject<number> = new BehaviorSubject(null);
+    // activeCharacterPosition: Observable<number> = this._activeCharacterPosition.asObservable();
     
-    _chosenAbility: BehaviorSubject<Ability> = new BehaviorSubject(null);
-    chosenAbility: Observable<Ability> = this._chosenAbility.asObservable();
+    // _chosenAbility: BehaviorSubject<Ability> = new BehaviorSubject(null);
+    // chosenAbility: Observable<Ability> = this._chosenAbility.asObservable();
     
-    _chosenAbilities: BehaviorSubject<Array<AbilityTargetDTO>> = new BehaviorSubject([]);
-    chosenAbilities: Observable<Array<AbilityTargetDTO>> = this._chosenAbilities.asObservable();
+    // _chosenAbilities: BehaviorSubject<Array<AbilityTargetDTO>> = new BehaviorSubject([]);
+    // chosenAbilities: Observable<Array<AbilityTargetDTO>> = this._chosenAbilities.asObservable();
     
     _availableAbilities: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableAbilities: Observable<Array<number>> = this._availableAbilities.asObservable();
     
     _availableTargets: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableTargets: Observable<Array<number>> = this._availableTargets.asObservable();
+  playerId: any;
 
     /// GETTERS SETTERS////
 
-    getIsPlayerOneSub() {
-      return this.isPlayerOneSub;
+    // getVictory() {
+    //   return this.victory;
+    // }
+
+    // setVictory(next) {
+    //   this._victory.next(next);
+    // }
+
+    
+    getInBattle() {
+      return this.inBattle;
     }
 
-    getVictory() {
-      return this.victory;
+    setInBattle(next) {
+      this._inBattle.next(next);
     }
 
-    setVictory(next) {
-      this._victory.next(next);
-    }
+    // getDefeat() {
+    //   return this.defeat;
+    // }
 
-    getDefeat() {
-      return this.defeat;
-    }
-
-    setDefeat(next) {
-      this._defeat.next(next);
-    }
+    // setDefeat(next) {
+    //   this._defeat.next(next);
+    // }
 
     getOpponent() {
       return this.opponent;
@@ -128,53 +132,6 @@ export class ArenaStore {
       this._enemies.next(next);
     }
 
-    getBattleAllies() {
-      return this.battleAllies;
-    }
-
-    setBattleAllies(next) {
-      this._battleAllies.next(next);
-    }  
-
-    getBattleEnemies() {
-      return this.battleEnemies;
-    }
-
-    setBattleEnemies(next) {
-      this._battleEnemies.next(next);
-    }
-    
-    getTurnEnergy() {
-      return this.turnEnergy;
-    }
-
-    setTurnEnergy(next) {
-      this._turnEnergy.next(next);
-    }    
-
-    getSpentEnergy() {
-      return this.spentEnergy;
-    }
-
-    setSpentEnergy(next) {
-      this._spentEnergy.next(next);
-    }
-    
-    getTurnEffects() {
-      return this.turnEffects;
-    }
-
-    setTurnEffects(next) {
-      this._turnEffects.next(next);
-    }
-        
-    getChosenAbilities() {
-      return this.chosenAbilities;
-    }
-
-    setChosenAbilities(next) {
-      this._chosenAbilities.next(next);
-    }
         
     getAvailableAbilities() {
       return this.availableAbilities;
@@ -192,43 +149,18 @@ export class ArenaStore {
       this._availableTargets.next(next);
     }
 
-    getHasTurn() {
-      return this.hasTurn;
-    }
+    // getHasTurn() {
+    //   return this.hasTurn;
+    // }
 
-    setHasTurn(next) {
-      this._hasTurn.next(next);
-    }
-    getActiveCharacterPosition() {
-      return this.activeCharacterPosition;
-    }
-
-    setActiveCharacterPosition(next) {
-      this._activeCharacterPosition.next(next);
-    }
-
-    getChosenAbility() {
-      return this.chosenAbility;
-    }
-
-    setChosenAbility(next) {
-      this._chosenAbility.next(next);
-    }
+    // setHasTurn(next) {
+    //   this._hasTurn.next(next);
+    // }
 
     /// GETTERS SETTERS////
 
     setAllies(allies) {
       this.allies = allies;
-    }
-
-
-    setIsPlayerOne(isPlayerOne) {
-      this.isPlayerOne = isPlayerOne;
-      this._isPlayerOne.next(isPlayerOne);
-    }
-
-    getIsPlayerOne() {
-      return this.isPlayerOne;
     }
 
     setArenaId(num : number) {
@@ -271,7 +203,7 @@ export class ArenaStore {
       );
       this.arenaService.websocketReady.subscribe(x => {
         if (x) {
-          this.sendMatchMakingMessage();
+          this.sendMatchMakingMessage(player.id);
         }
       })
     }
@@ -291,7 +223,7 @@ export class ArenaStore {
       );
       this.arenaService.websocketReady.subscribe(x => {
         if (x) {
-          this.sendMatchMakingMessage();
+          this.sendMatchMakingMessage(player.id);
         }
       })
     }
@@ -311,7 +243,7 @@ export class ArenaStore {
       );
       this.arenaService.websocketReady.subscribe(x => {
         if (x) {
-          this.sendMatchMakingMessage();
+          this.sendMatchMakingMessage(player.id);
         }
       })
     }
@@ -354,10 +286,17 @@ export class ArenaStore {
 
 
     handleInitResponse(msg) {
-      this.setIsPlayerOne(msg.battle.playerIdOne === this.playerSub.id);
-      if (this.getIsPlayerOne()){
+      let isPlayerOne = msg.battle.playerIdOne === this.playerId;
+      if (isPlayerOne){
         this.setPlayer(msg.playerOne);
         this.setOpponent(msg.playerTwo);
+        
+
+        let holder1 : Array<Character> = new Array();
+        holder1.push(msg.characters[0]);
+        holder1.push(msg.characters[1]);
+        holder1.push(msg.characters[2]);
+        this.setAllies(holder1);
 
         let holder : Array<Character> = new Array();
         holder.push(msg.characters[3]);
@@ -365,15 +304,22 @@ export class ArenaStore {
         holder.push(msg.characters[5]);
         this.setEnemies(holder);
 
-        this.setBattleAllies(msg.battle.playerOneTeam);
-        this.setBattleEnemies(msg.battle.playerTwoTeam);
+        // this.setBattleAllies(msg.battle.playerOneTeam);
+        // this.setBattleEnemies(msg.battle.playerTwoTeam);
 
-        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
-        this.setSpentEnergy(this.newMap());
+        // this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
+        // this.setSpentEnergy(this.newMap());
       
       } else {
         this.setPlayer(msg.playerTwo);
         this.setOpponent(msg.playerOne);
+
+
+        let holder1 : Array<Character> = new Array();
+        holder1.push(msg.characters[3]);
+        holder1.push(msg.characters[4]);
+        holder1.push(msg.characters[5]);
+        this.setAllies(holder1);
 
         let holder : Array<Character> = new Array();
         holder.push(msg.characters[0]);
@@ -381,33 +327,29 @@ export class ArenaStore {
         holder.push(msg.characters[2]);
         this.setEnemies(holder);
 
-        this.setBattleAllies(msg.battle.playerTwoTeam);
-        this.setBattleEnemies(msg.battle.playerOneTeam);
+        // this.setBattleAllies(msg.battle.playerTwoTeam);
+        // this.setBattleEnemies(msg.battle.playerOneTeam);
 
-        this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
-        this.setSpentEnergy(this.newMap()); 
+        // this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
+        // this.setSpentEnergy(this.newMap()); 
       }
 
+      // TODO: move this to first time setup in subscription
       this.setTempAllies(Object.create(this.allies));
 
-      if ( (msg.battle.playerOneStart && this.getIsPlayerOne()) || (!msg.battle.playerOneStart && !this.getIsPlayerOne()) ) {
-        this.setHasTurn(true);
-      } else {
-        this.setHasTurn(false);
-      }
-      
+      this.setInBattle(true);
       this.setBattle(msg.battle);
     }
 
 
     handleEnergyTradeResponse(msg) {
-      if (this.getIsPlayerOne()) {
-        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
-      } else {
-        this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
-      }
+      // if (this.getIsPlayerOne()) {
+      //   this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
+      // } else {
+      //   this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
+      // }
       
-      this.setSpentEnergy(this.newMap());
+      // this.setSpentEnergy(this.newMap());
       this.setBattle(msg.battle);
     }
     
@@ -423,11 +365,13 @@ export class ArenaStore {
 
     handleSurrenderResponse(msg) {
       // TODO: set victory above so it cascades down to component
-      if (this.playerSub.id === msg.playerId) {
-        this._victory.next(false);
+      if (this.getCurrentPlayer().id === msg.playerId) {
+        // this._victory.next(false);
       } else {
-        this._victory.next(true);
+        // this._victory.next(true);
       }
+      this.setInBattle(false);
+      this.setBattle(null);
     }
     
 
@@ -435,39 +379,25 @@ export class ArenaStore {
       let team;
       let enemyTeam;
 
-      if (this.getIsPlayerOne()) {
+      if (msg.isPlayerOne) {
         team = msg.battle.playerOneTeam;
         enemyTeam = msg.battle.playerTwoTeam;
-        this.setBattleAllies(team);
-        this.setBattleEnemies(enemyTeam);
-        this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
-        this.setSpentEnergy(this.newMap());
       } else {
         team = msg.battle.playerTwoTeam;
         enemyTeam = msg.battle.playerOneTeam;
-        this.setBattleAllies(team);
-        this.setBattleEnemies(enemyTeam);
-        this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
-        this.setSpentEnergy(this.newMap());
       }
 
       let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
       let defeat = team[0].dead && team[1].dead && team[2].dead;
 
       if (victory) {
-        this.setVictory(true);
+        // this.setVictory(true);
+        this.setInBattle(false);
       }
 
       if (defeat) {
-        this.setDefeat(true);
-      }
-
-      if (msg.playerId === this.playerSub.id) {
-        console.log("You ended your turn");
-        this.setHasTurn(false);
-      } else {
-        console.log("They ended their turn");
-        this.setHasTurn(true);
+        // this.setDefeat(true);
+        this.setInBattle(false);
       }
       
       this.setBattle(msg.battle);
@@ -476,14 +406,15 @@ export class ArenaStore {
     // maybe these live in the component and facade back through the store?  makes the most sense.
 
 
-    sendMatchMakingMessage() {
+    sendMatchMakingMessage(playerId) {
       console.log("::Sent MATCH_MAKING Message");
+      this.playerId = playerId;
       let msg = {
         type: "MATCH_MAKING",
         char1: this.allies[0].id,
         char2: this.allies[1].id,
         char3: this.allies[2].id,
-        playerId: this.playerSub.id,
+        playerId: playerId,
         arenaId: this.arenaId
       };
       this.arenaService.sendWebsocketMessage(JSON.stringify(msg));
@@ -498,7 +429,7 @@ export class ArenaStore {
       
       const payload = {
         type: "COST_CHECK",
-        playerId: this.playerSub.id,
+        playerId: this.getCurrentPlayer().id,
         costCheckDTO: costCheckDTO
       };
 
@@ -510,7 +441,7 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "TARGET_CHECK",
-          playerId: this.playerSub.id,
+          playerId: this.getCurrentPlayer().id,
           abilityTargetDTO: dto
         })
       )
@@ -530,7 +461,7 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "ENERGY_TRADE",
-          playerId: this.playerSub.id,
+          playerId: this.getCurrentPlayer().id,
           spent: enrgy,
           chosen: energyGained
         })
@@ -543,7 +474,7 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "SURRENDER",
-          playerId: this.playerSub.id
+          playerId: this.getCurrentPlayer().id
         })
       )
     }
@@ -567,7 +498,7 @@ export class ArenaStore {
   
       const payload = {
         type: "TURN_END",
-        playerId: this.playerSub.id,
+        playerId: this.getCurrentPlayer().id,
         battleTurnDTO: battleTurnDTO
       }
 
@@ -577,57 +508,5 @@ export class ArenaStore {
         JSON.stringify(payload)
       );
     }
-
-    /// ABILITIES ///
-
-
-    confirmAbility(chosenAbility, tarArray, activeCharacterPosition, chosenAbilities) {
-
-      // form and add AbiltyTargetDTOS to array
-			let dto = new AbilityTargetDTO;
-			dto.ability = chosenAbility;
-			dto.targetPositions = tarArray;
-			dto.characterPosition = activeCharacterPosition;
-
-      // add DTO for backend call, gets sent at the end!!! (got it)
-      chosenAbilities.push(dto);
-      this.setChosenAbilities(chosenAbilities);
-    }
-
-
-
-    //// ENERGY ////
-
-
-  // UTIL //////
-
-    
-	newMap() {
-    let temp : Map<string, number> = new Map();
-    temp.set("STRENGTH", 0);
-    temp.set("DEXTERITY", 0);
-    temp.set("ARCANA", 0);
-    temp.set("DIVINITY", 0);
-		return temp;
-	}
-
-	copyMap(a : Map<string, number>) {
-		let temp : Map<string, number> = new Map();
-		temp.set("STRENGTH", a["STRENGTH"]);
-		temp.set("DEXTERITY", a["DEXTERITY"]);
-		temp.set("ARCANA", a["ARCANA"]);
-		temp.set("DIVINITY", a["DIVINITY"]);
-		return temp;
-  }
-  
-
-	copyMapForBack(a : Map<string, number>) {
-		let temp : Map<string, number> = new Map();
-		temp["STRENGTH"] = a["STRENGTH"];
-		temp["DEXTERITY"] = a["DEXTERITY"];
-		temp["ARCANA"] = a["ARCANA"];
-		temp["DIVINITY"] = a["DIVINITY"];
-		return temp;
-  }
 
 }
