@@ -19,6 +19,13 @@ export class MissionRequirement {
 	targetFaction : string;
 }
 
+export class PlayerEnergy {
+    type : string;
+    amount : number;
+    spent : number;
+    total : number;
+}
+
 export class MissionProgress {
     requirements : Array<MissionRequirement>;
 }
@@ -37,7 +44,6 @@ export class Character {
 
 export class CharacterInstance {
     hp : number;
-    playerOneCharacter : Boolean;
     // player 1 (1, 2, 3) player 2 (4, 5, 6)
     position : number;
     characterId : number;

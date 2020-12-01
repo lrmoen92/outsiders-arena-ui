@@ -44,6 +44,10 @@ img {
     float : left;
 }
 
+.right-text {
+    float : right;
+}
+
 .RANDOM {
     width : 10px;
     height : 10px;

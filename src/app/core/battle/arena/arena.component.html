@@ -20,10 +20,7 @@
                 <fa-icon [icon]="faVolumeUp"></fa-icon>
               </span>
               <div>
-                TIME LEFT: {{ timeLeft }}
-                <!-- <countdown id="countdown" [config]="config" (event)="handleTimerEvent($event)">
-      
-                </countdown> -->
+                TIME LEFT: {{ timeLeft | async }}
               </div>
             </div>
           </div>
@@ -31,48 +28,56 @@
           <div *ngIf="hasTurn" id="energy">
             
             <div id="energy-pool">
-              <div class="left-text">TOTAL ENERGY: {{ totalEnergy }}</div>
-              <span id="turn-divinity">
-                <div *ngFor="let energy of turnDivinity" (click)="spendEnergy(energy, false)" class="energy-divinity energy"></div>
-              </span>
-              <span id="turn-arcana">
-                <div *ngFor="let energy of turnArcana" (click)="spendEnergy(energy, false)" class="energy-arcana energy"></div>
-              </span>
-              <span id="turn-dexterity">
-                <div *ngFor="let energy of turnDexterity" (click)="spendEnergy(energy, false)" class="energy-dexterity energy"></div>
-              </span>
-              <span id="turn-strength">
-                <div *ngFor="let energy of turnStrength" (click)="spendEnergy(energy, false)" class="energy-strength energy"></div>
+              <span id="turn-energy">
+              <!-- <div class="left-text">TOTAL ENERGY: {{ totalEnergy }}</div> -->
+                <div class="left-text">ENERGY:
+                  <div *ngFor="let energy of turnEnergy" (click)="spendEnergy(energy, false)">
+                    <div *ngIf="energy === 'DIVINITY'" class="energy energy-divinity"> 
+
+                    </div>
+                    <div *ngIf="energy === 'ARCANA'" class="energy energy-arcana"> 
+
+                    </div>
+                    <div *ngIf="energy === 'DEXTERITY'" class="energy energy-dexterity"> 
+
+                    </div>
+                    <div *ngIf="energy === 'STRENGTH'" class="energy energy-strength"> 
+
+                    </div>
+                  </div>
+                </div>
+
+                <div class="right-text">SPENT:
+                  <div *ngFor="let energy of spentEnergy" (click)="returnEnergy(energy, false)">
+                    <div *ngIf="energy === 'DIVINITY'" class="energy energy-divinity"> 
+
+                    </div>
+                    <div *ngIf="energy === 'ARCANA'" class="energy energy-arcana"> 
+
+                    </div>
+                    <div *ngIf="energy === 'DEXTERITY'" class="energy energy-dexterity"> 
+
+                    </div>
+                    <div *ngIf="energy === 'STRENGTH'" class="energy energy-strength"> 
+
+                    </div>
+                  </div>
+                </div>
               </span>
             </div>
             
             <br>
-
-            <div id="spent">
-              <div class="left-text">TOTAL SPENT: {{ totalSpentEnergy }}</div>
-              <span id="spent-divinity">
-                <div *ngFor="let energy of spentDivinity" (click)="returnEnergy(energy, false)" class="energy-divinity energy"></div>
-              </span>
-              
-              <span id="spent-arcana">
-                <div *ngFor="let energy of spentArcana" (click)="returnEnergy(energy, false)" class="energy-arcana energy"></div>
-              </span>
-              
-              <span id="spent-dexterity">
-                <div *ngFor="let energy of spentDexterity" (click)="returnEnergy(energy, false)" class="energy-dexterity energy"></div>
-              </span>
-              
-              <span id="spent-strength">
-                <div *ngFor="let energy of spentStrength" (click)="returnEnergy(energy, false)" class="energy-strength energy"></div>
-              </span>
-            </div>
 
             <span *ngIf="randomsNeeded > 0"> {{ randomsNeeded }} MORE ENERGY NEEDED</span>
             
           </div>
 
           <div id="actionsHeader">
+            
             <div *ngIf="hasTurn">
+              <button (click)="clickEnergyTrade()" [disabled]="!hasTurn || abilitiesAreChosen()">
+                Trade
+              </button>
               <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="divinityTrade" value="DIVINITY">
               <div class="energy energy-divinity"></div>
               <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="arcanaTrade" value="ARCANA">
@@ -82,11 +87,9 @@
               <input class="energyTradeInput" type="radio" [(ngModel)]="energyTrade" id="strengthTrade" value="STRENGTH">
               <div class="energy energy-strength"></div>
             </div>
+
             <br>
             <div>
-              <button (click)="clickEnergyTrade()" [disabled]="!hasTurn || abilitiesAreChosen()">
-                Trade
-              </button>
               <button (click)="sendTurnEnd()" [disabled]="!hasTurn">
                 Finish Turn
               </button>

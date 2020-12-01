@@ -1,7 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { CharacterStore } from './character.store';
 
-@Pipe({name: 'findPortrait'})
+@Pipe({name: 'portPipe'})
 export class PortraitPipe implements PipeTransform {
     store :CharacterStore;
     allCharacters;
