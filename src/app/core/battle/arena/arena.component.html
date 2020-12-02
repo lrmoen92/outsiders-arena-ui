@@ -29,47 +29,47 @@
             
             <div id="energy-pool">
               <span id="turn-energy">
-              <!-- <div class="left-text">TOTAL ENERGY: {{ totalEnergy }}</div> -->
-                <div class="left-text">ENERGY:
-                  <div *ngFor="let energy of turnEnergy" (click)="spendEnergy(energy, false)">
-                    <div *ngIf="energy === 'DIVINITY'" class="energy energy-divinity"> 
+                <span class="left-text">
+                  <span *ngFor="let energy of turnEnergy" (click)="spendEnergy(energy, false)">
+                    <span *ngIf="energy === 'DIVINITY'" class="energy energy-divinity"> 
 
-                    </div>
-                    <div *ngIf="energy === 'ARCANA'" class="energy energy-arcana"> 
+                    </span>
+                    <span *ngIf="energy === 'ARCANA'" class="energy energy-arcana"> 
 
-                    </div>
-                    <div *ngIf="energy === 'DEXTERITY'" class="energy energy-dexterity"> 
+                    </span>
+                    <span *ngIf="energy === 'DEXTERITY'" class="energy energy-dexterity"> 
 
-                    </div>
-                    <div *ngIf="energy === 'STRENGTH'" class="energy energy-strength"> 
+                    </span>
+                    <span *ngIf="energy === 'STRENGTH'" class="energy energy-strength"> 
 
-                    </div>
-                  </div>
-                </div>
+                    </span>
+                  </span>
+                </span>
 
-                <div class="right-text">SPENT:
-                  <div *ngFor="let energy of spentEnergy" (click)="returnEnergy(energy, false)">
-                    <div *ngIf="energy === 'DIVINITY'" class="energy energy-divinity"> 
+                <span class="right-text">
+                  <span *ngFor="let energy of spentEnergy" (click)="returnEnergy(energy, false)">
+                    <span *ngIf="energy === 'DIVINITY'" class="energy energy-divinity"> 
 
-                    </div>
-                    <div *ngIf="energy === 'ARCANA'" class="energy energy-arcana"> 
+                    </span>
+                    <span *ngIf="energy === 'ARCANA'" class="energy energy-arcana"> 
 
-                    </div>
-                    <div *ngIf="energy === 'DEXTERITY'" class="energy energy-dexterity"> 
+                    </span>
+                    <span *ngIf="energy === 'DEXTERITY'" class="energy energy-dexterity"> 
 
-                    </div>
-                    <div *ngIf="energy === 'STRENGTH'" class="energy energy-strength"> 
+                    </span>
+                    <span *ngIf="energy === 'STRENGTH'" class="energy energy-strength"> 
 
-                    </div>
-                  </div>
-                </div>
+                    </span>
+                  </span>
+                </span>
               </span>
             </div>
             
             <br>
 
-            <span *ngIf="randomsNeeded > 0"> {{ randomsNeeded }} MORE ENERGY NEEDED</span>
-            
+            <div class="left-text">TOTAL ENERGY: {{ totalEnergy }}</div>
+            <br>
+            <div class="left-text" *ngIf="randomsNeeded > 0">{{ randomsNeeded }} MORE ENERGY NEEDED</div>
           </div>
 
           <div id="actionsHeader">
@@ -116,7 +116,7 @@
           <div class="ally-info">
             <div *ngFor="let ally of battleAllies" class="battle-allies">
               <div class="ally-info-portrait">
-                <img [ngStyle]="getCharacterPortrait(ally).style" [src]="getCharacterPortrait(ally).url" class="ally-portrait" (click)="clickTarget(ally.position)">        
+                <img [ngStyle]="getCharacterStyle(ally.position)" [src]="getCharacterPortrait(ally)" class="ally-portrait" (click)="clickTarget(ally.position)">        
                 <div>
                   {{ ally.hp }} / 100
                 </div>
@@ -152,7 +152,7 @@
               </div>
 
               <div class="enemy-info-portrait">
-                <img [ngStyle]="getCharacterPortrait(enemy).style" [src]="getCharacterPortrait(enemy).url"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
+                <img [ngStyle]="getCharacterStyle(enemy.position)" [src]="getCharacterPortrait(enemy)"  (click)="clickTarget(enemy.position)" class="enemy-portrait">
                 <div>
                   {{ enemy.hp }} / 100
                 </div>
@@ -188,7 +188,7 @@
           </div>
         </div>
 
-        <div *ngIf="isReelEmpty()" id="chosenAbilities">
+        <div *ngIf="isReelNotEmpty()" id="chosenAbilities">
           <div cdkDropList cdkDropListOrientation="horizontal" class="example-list" (cdkDropListDropped)="drop($event)">
             <div *ngFor="let effect of turnEffects" class="example-box" cdkDrag>
               <img [src]="imgPrefix + effect.avatarUrl" class="ally-ability-portrait">

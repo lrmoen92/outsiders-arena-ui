@@ -46,10 +46,6 @@ export class ArenaComponent implements OnInit {
 	battleAllies : Array<CharacterInstance> = [];
 	battleEnemies : Array<CharacterInstance> = [];
 
-
-	totalEnergy : number = 0;
-	totalSpentEnergy : number = 0;
-
     _playerEnergy: BehaviorSubject<Array<PlayerEnergy>> = new BehaviorSubject([]);
 	playerEnergy: Observable<Array<PlayerEnergy>> = this._playerEnergy.asObservable();
 	
@@ -72,6 +68,9 @@ export class ArenaComponent implements OnInit {
 	lockedDex = 0;
 	lockedArc = 0;
 	lockedDiv = 0;
+
+	totalEnergy : number = 0;
+	totalSpentEnergy : number = 0;
 
 	energyTrade : string;
 
@@ -160,6 +159,20 @@ export class ArenaComponent implements OnInit {
 		})
 	}
 
+	subToVictory() {
+		this.arenaStore.getVictory().subscribe(x => {
+			if (x !== null) {
+				if (x) {
+					this.playAudio("victory");
+					alert("YOU HAVE WON");
+				} else {
+					this.playAudio("defeat");
+					alert("YOU HAVE LOST");
+				}
+			}
+		})
+	}
+
 	subscribeToBattle() {		
 		this.arenaStore.getBattle().subscribe(x => {
 			if (x) {
@@ -171,6 +184,7 @@ export class ArenaComponent implements OnInit {
 				if (this.battle.turn === 0) {
 					this.startTimer();
 					this.initEnergy();
+					this.subToVictory();
 					this.tempAllies = Object.create(this.allies);
 					this.isPlayerOne = this.player.id === this.battle.playerIdOne;
 				}
@@ -211,6 +225,8 @@ export class ArenaComponent implements OnInit {
 					}
 				}
 
+				console.log(this.battlePortraits);
+
 				for (let c of this.battleAllies) {
 					for (let d of team) {
 						if (c.position == d.position) {
@@ -235,8 +251,6 @@ export class ArenaComponent implements OnInit {
 				this.battleEnemies = enemies;
 				this.filterEffects(this.battleAllies, this.battleEnemies);
 
-				// this.dispenseEnergy(null, null);
-
 				let iStarted : boolean = 
 					(this.isPlayerOne && this.battle.playerOneStart) ||
 					(!this.isPlayerOne && !this.battle.playerOneStart);
@@ -245,14 +259,9 @@ export class ArenaComponent implements OnInit {
 					((this.battle.turn % 2 === 0) && iStarted) ||
 					((this.battle.turn % 2 !== 0) && !iStarted);
 
-				// console.log("Player One Started? " + this.battle.playerOneStart);
-				// console.log("I Started? " + iStarted);
-
 				let playerString = this.isPlayerOne ? "I'm Player One, and " : "I'm Player Two, and ";
-
 				console.log(playerString + "I just " + (this.hasTurn ? "began" : "ended") +" my turn.");
 
-				// console.log("Is It My Turn? " + this.hasTurn);
 				if (this.hasTurn) {
 					this.sendCostCheck();
 				} else {
@@ -260,21 +269,6 @@ export class ArenaComponent implements OnInit {
 				}
 			}
 		})
-
-
-		// TODO: ENERGY TRADE, TARGET CHECK, VICTORY
-
-
-		// this.arenaStore.getVictory().subscribe(x => {
-		// 	if (x) {
-		// 		this.playAudio("victory");
-		// 		alert("YOU HAVE WON");
-		// 	}
-		// })
-		
-
-
-
 	}
 
 	// ======================================================================================================================
@@ -409,6 +403,8 @@ export class ArenaComponent implements OnInit {
 
 			this.turnEnergy = [];
 			this.spentEnergy = [];
+			this.totalEnergy = 0;
+			this.totalSpentEnergy = 0;
 			this.strC = 0;
 			this.strS = 0;
 			this.dexC = 0;
@@ -421,6 +417,7 @@ export class ArenaComponent implements OnInit {
 			for (let playerEnergy of x) {
 				let str = playerEnergy.type;
 				for (let amount = playerEnergy.amount; amount > 0 ; amount--) {
+					this.totalEnergy++;
 					if (str === "STRENGTH") {
 						this.strC++;
 					}
@@ -436,6 +433,7 @@ export class ArenaComponent implements OnInit {
 					this.turnEnergy.push(str);
 				}
 				for (let spent = playerEnergy.spent; spent > 0 ; spent--) {
+					this.totalSpentEnergy++;
 					if (str === "STRENGTH") {
 						this.strS++;
 					}
@@ -600,14 +598,13 @@ export class ArenaComponent implements OnInit {
 	returnEnergy(energy : string, force : boolean) {
 		
 		if(energy === "RANDOM") {
-			// this.removeNonLockedEnergy();
+			// shouldn't happen
 		} else {
 
 			if (!force) {
 				this.calculateLockedEnergy();
 			}
 
-			// todo: redo this for locked energy
 			if (energy === "STRENGTH" && this.strS === this.lockedStr && !force) {
 				alert("You can't remove that energy, remove the ability you spent it on first!");
 			} else if (energy === "DEXTERITY" && this.dexS === this.lockedDex && !force) {
@@ -735,8 +732,7 @@ export class ArenaComponent implements OnInit {
 			alert("You must spend 5 energy, to trade for 1");
 		} else {
 			// calculate or call current spent energy
-			let spentEnergy;
-			this.sendEnergyTrade(spentEnergy, this.energyTrade);
+			this.sendEnergyTrade(this.getSpentEnergy(), this.energyTrade);
 		}
 	}
 
@@ -752,7 +748,7 @@ export class ArenaComponent implements OnInit {
 
 
 	filterEffects(battleAllies, battleEnemies) {
-		// gotta populate a map of <instanceID, effect> so we dont show AOE more than once on turnEffects // TODO:
+		// gotta populate a map of <instanceID, effect> so we dont show AOE more than once on turnEffects
 		for(let ally of battleAllies) {
 		if(ally.effects.length > 0) {
 			for(let effect of ally.effects.values()) {
@@ -868,26 +864,25 @@ export class ArenaComponent implements OnInit {
 		let suffix : string = playerOneChar ? "o" : "t";
 		let id : number = c.characterId;
 		let indx : string = id + suffix;
-		this.battlePortraits.get(indx).style = this.getCharacterStyle(c.position); 
+		let style =  this.getCharacterStyle(c.position);
+		let portrait = this.battlePortraits.get(indx);
+		portrait.style = style; 
+		this.battlePortraits.set(indx, portrait);
 	}
 
-	getCharacterPortrait(c : CharacterInstance): Portrait {
-		if (this.battlePortraits.size > 0) {
-			let playerOneChar : boolean  = c.position > 2 ? false : true;
-			let suffix : string = playerOneChar ? "o" : "t";
-			let id : number = c.characterId;
-			let indx : string = id + suffix;
-			return this.battlePortraits.get(indx);
-		}
+	getCharacterPortrait(c : CharacterInstance): string {
+		let playerOneChar : boolean  = c.position > 2 ? false : true;
+		let suffix : string = playerOneChar ? "o" : "t";
+		let id : number = c.characterId;
+		let indx : string = id + suffix;
+		return this.battlePortraits.get(indx).url;
 	}
 
 	getCharacterStyle(characterPosition) {
-		if (this.availableTargets) {
-			if (this.isTargetLocationLocked(characterPosition)) {
-				return {'opacity': 0.2};
-			} else {
-				return {'opacity': 1};
-			}
+		if (this.isTargetLocationLocked(characterPosition)) {
+			return {'opacity': 0.2};
+		} else {
+			return {'opacity': 1};
 		}
 	}
 
@@ -924,7 +919,7 @@ export class ArenaComponent implements OnInit {
 				return false;
 			}
 		} else {
-			return true;
+			return false;
 		}
 
 	}
@@ -990,11 +985,8 @@ export class ArenaComponent implements OnInit {
 				tarArray.push(targetLocation);
 			}
 
-			this.confirmAbility(this.chosenAbility, tarArray, this.activeCharacterPosition, this.chosenAbilities);
-
-
-			// TODO: CHECK THIS V
-			// this.sendCostCheck();
+			this.confirmAbility(this.chosenAbility, tarArray);
+			this.sendCostCheck();
 		} else {
 			// TODO:
 			// clicking targets should show character blurb normally (duh)
@@ -1007,16 +999,16 @@ export class ArenaComponent implements OnInit {
 		}
 	}
 
-    confirmAbility(chosenAbility, tarArray, activeCharacterPosition, chosenAbilities) {
+    confirmAbility(chosenAbility, tarArray) {
 
 		// form and add AbiltyTargetDTOS to array
 		let dto = new AbilityTargetDTO;
 		dto.ability = chosenAbility;
 		dto.targetPositions = tarArray;
-		dto.characterPosition = activeCharacterPosition;
+		dto.characterPosition = this.activeCharacterPosition - (this.isPlayerOne ? 0 : 3);
   
 		// add DTO for backend call, gets sent at the end!!! (got it)
-		chosenAbilities.push(dto);
+		this.chosenAbilities.push(dto);
 		// add ability to UI
 		this.addAbilityToReel(chosenAbility);
 		this.clearSelection(false);
@@ -1048,7 +1040,7 @@ export class ArenaComponent implements OnInit {
 		);
 	  }
 
-	  isReelEmpty() {
+	  isReelNotEmpty() {
 		  return (this.chosenAbilities.length > 0) || (this.turnEffects.length > 0);
 	  }
 
@@ -1065,13 +1057,12 @@ export class ArenaComponent implements OnInit {
 		tempEffect.avatarUrl = ability.abilityUrl;
 		tempEffect.name = ability.name;
 		this.turnEffects.push(tempEffect);
-		this.setTurnEffects(this.turnEffects);
 	}
 
 	removeAbilityFromReel(effect : BattleEffect) {
 		if (effect.instanceId > 0) {
 			// can't remove pre-existing conditions breh
-			// TODO: add check here to remove or reorder some of these
+			// TODO: add check here to remove or reorder some of these hanging or dead effects
 		} else {
 			var index = this.chosenAbilities.findIndex(a => a.ability.name==effect.name);
 			let ability = this.chosenAbilities[index].ability;
@@ -1080,8 +1071,6 @@ export class ArenaComponent implements OnInit {
 			this.refundCostTemporary(ability);
 			this.chosenAbilities.splice(index, 1);
 			this.turnEffects.splice(index2, 1);
-			this.setChosenAbilities(this.chosenAbilities);
-			this.setTurnEffects(this.turnEffects);
 		}
 	}
 
@@ -1203,8 +1192,7 @@ export class ArenaComponent implements OnInit {
 		this.arenaStore.sendTargetCheck(dto);
 	}
 
-	sendEnergyTrade(energySpent : Map<String, number>, energyGained : string){
-
+	sendEnergyTrade(energySpent : Array<string>, energyGained : string){
 		this.arenaStore.sendEnergyTrade(energySpent, energyGained);
 	}
 

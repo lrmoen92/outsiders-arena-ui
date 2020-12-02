@@ -26,14 +26,18 @@ export class ArenaStore {
 
     _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(null);
     hasTurn: Observable<boolean> = this._hasTurn.asObservable();
+    
 
-    // getVictory() {
-    //   return this.victory;
-    // }
+    _victory: BehaviorSubject<boolean> = new BehaviorSubject(null);
+    victory: Observable<boolean> = this._victory.asObservable();
 
-    // setVictory(next) {
-    //   this._victory.next(next);
-    // }
+    getVictory() {
+      return this.victory;
+    }
+
+    setVictory(next) {
+      this._victory.next(next);
+    }
 
     _gameEnd: BehaviorSubject<boolean> = new BehaviorSubject(false);
     gameEnd: Observable<boolean> = this._gameEnd.asObservable();
@@ -46,12 +50,6 @@ export class ArenaStore {
     
     _enemies: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
     enemies: Observable<Array<Character>> = this._enemies.asObservable();
-    
-    // _turnEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
-    // turnEnergy: Observable<Map<string, number>> = this._turnEnergy.asObservable();
-
-    // _spentEnergy: BehaviorSubject<Map<string, number>> = new BehaviorSubject(this.newMap());
-    // spentEnergy: Observable<Map<string, number>> = this._spentEnergy.asObservable();
     
     _availableAbilities: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableAbilities: Observable<Array<number>> = this._availableAbilities.asObservable();
@@ -281,13 +279,6 @@ export class ArenaStore {
 
 
     handleEnergyTradeResponse(msg) {
-      // if (this.getIsPlayerOne()) {
-      //   this.setTurnEnergy(this.copyMap(msg.battle.playerOneEnergy));
-      // } else {
-      //   this.setTurnEnergy(this.copyMap(msg.battle.playerTwoEnergy));
-      // }
-      
-      // this.setSpentEnergy(this.newMap());
       this.setBattle(msg.battle);
     }
     
@@ -301,11 +292,10 @@ export class ArenaStore {
     
 
     handleSurrenderResponse(msg) {
-      // TODO: set victory above so it cascades down to component
       if (this.getCurrentPlayer().id === msg.playerId) {
-        // this._victory.next(false);
+        this.setVictory(false);
       } else {
-        // this._victory.next(true);
+        this.setVictory(true);
       }
       this.setInBattle(false);
       this.setBattle(null);
@@ -328,19 +318,17 @@ export class ArenaStore {
       let defeat = team[0].dead && team[1].dead && team[2].dead;
 
       if (victory) {
-        // this.setVictory(true);
         this.setInBattle(false);
+        this.setVictory(true);
       }
 
       if (defeat) {
-        // this.setDefeat(true);
         this.setInBattle(false);
+        this.setVictory(false);
       }
       
       this.setBattle(msg.battle);
     }
-
-    // maybe these live in the component and facade back through the store?  makes the most sense.
 
 
     sendMatchMakingMessage(playerId) {
@@ -384,21 +372,13 @@ export class ArenaStore {
       )
     }
 
-    sendEnergyTrade(energySpent : Map<String, number>, energyGained : string){
+    sendEnergyTrade(energySpent : Array<string>, energyGained : string){
       console.log("::Sent ENERGY_TRADE Message");
-
-      let enrgy = {
-        "STRENGTH": energySpent.get("STRENGTH"),
-        "DEXTERITY": energySpent.get("DEXTERITY"),
-        "ARCANA": energySpent.get("ARCANA"),
-        "DIVINITY": energySpent.get("DIVINITY")
-      }
-
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "ENERGY_TRADE",
           playerId: this.getCurrentPlayer().id,
-          spent: enrgy,
+          spent: energySpent,
           chosen: energyGained
         })
       )
