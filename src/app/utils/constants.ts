@@ -11,7 +11,8 @@ export const URLS = {
     playerLadderArena : 'http://' + domain + '/api/player/arena/ladder/',
     playerQuickArena : 'http://' + domain + '/api/player/arena/quick/',
     playerArena : 'http://' + domain + '/api/player/arena/',
-    playerLogin : 'http://' + domain + '/api/player/',
+    playerLogin : 'http://' + domain + '/api/player/login/',
+    playerSignup : 'http://' + domain + '/api/player/signup/',
     characters : 'http://' + domain + '/api/character/',
 
     battleSocket : 'ws://' + domain + '/arena/',

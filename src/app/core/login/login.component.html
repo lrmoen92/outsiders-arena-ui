@@ -1,8 +1,32 @@
 <div id="splashscreen">
-    <input [(ngModel)]="playerName" placeholder="Display Name"/>
-    <input [(ngModel)]="playerAvatarUrl" placeholder="Avatar URL"/>
-    <br />
-    <button (click)="login()">
+    <button (click)="showLogin()">
         LOGIN
     </button>
+    <button (click)="showSignup()">
+        SIGNUP
+    </button>
+    <div *ngIf="loginButton">
+        <input [(ngModel)]="playerNameOrEmail" placeholder="Display Name or Email Address"/>
+        <input [(ngModel)]="playerPassword" placeholder="Password" type=password/>
+        <button (click)="login()">
+            LOGIN
+        </button>
+    </div>
+    <div *ngIf="signupButton">
+        <input [(ngModel)]="playerEmail" placeholder="Email Address"/>
+        <br />
+        <input [(ngModel)]="playerPassword" placeholder="Password" type=password/>
+        <br />
+        <input [(ngModel)]="playerPasswordConfirm" placeholder="Confirm Password" type=password/>
+        <br />
+        OPTIONAL
+        <br />
+        <input [(ngModel)]="playerName" placeholder="Display Name"/>
+        <br />
+        <input [(ngModel)]="playerAvatarUrl" placeholder="Avatar URL"/>
+        <br />
+        <button (click)="signup()">
+            SIGNUP
+        </button>
+    </div>
 </div>

@@ -26,6 +26,17 @@ export class PlayerEnergy {
     total : number;
 }
 
+export class Mission {
+    id : number;
+	name : string;
+	description : string;
+	avatarUrl : string;
+	minmumLevel : number;
+	prerequisiteMissionId : number;
+	characterIdUnlocked : number;
+	requirements : Array<MissionRequirement>;
+}
+
 export class MissionProgress {
     requirements : Array<MissionRequirement>;
 }

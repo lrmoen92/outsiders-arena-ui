@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, CostCheckDTO, Player } from '../model/api-models';
 import { ArenaService } from './arena.service';
 
@@ -11,6 +11,7 @@ export class ArenaStore {
     arenaService : ArenaService;
 
     arenaId : number;
+    queue : string;
 
     _player : BehaviorSubject<Player> = new BehaviorSubject(null);
     player : Observable<Player> = this._player.asObservable();
@@ -139,9 +140,16 @@ export class ArenaStore {
       this.arenaService.disconnect();
     }
 
-    connectToLadder(player) {
-      console.log('::Looking For Ladder Match');
-      this.arenaService.connectToLadder(player).subscribe(
+    subscribeToArenaSocket(player : Player) {
+      this.arenaService.websocketReady.subscribe(x => {
+        if (x) {
+          this.sendMatchMakingMessage(player.id, this.queue);
+        }
+      })
+    }
+
+    subscribeToQueue(obs : Observable<Object>) : Subscription {
+      return obs.subscribe(
         x => {
           this.setArenaId(<number> x);
         },
@@ -152,54 +160,30 @@ export class ArenaStore {
           this.initSocket();
         },
       );
+    }
 
-      this.arenaService.websocketReady.subscribe(x => {
-        if (x) {
-          this.sendMatchMakingMessage(player.id);
-        }
-      })
+    connectToLadder(player) {
+      console.log('::Looking For Ladder Match');
+      this.queue = "LADDER";
+      this.subscribeToQueue(this.arenaService.connectToLadder(player));
+
+      this.subscribeToArenaSocket(player);
     }
   
     connectToQuick(player) {
       console.log('::Looking For Quick Match');
-      this.arenaService.connectToQuick(player).subscribe(
-        x => {
-          this.setArenaId(<number> x);
-        },
-        y => {
+      this.queue = "QUICK";
+      this.subscribeToQueue(this.arenaService.connectToQuick(player));
 
-        },
-        () => {
-          this.initSocket();
-        },
-      );
-
-      this.arenaService.websocketReady.subscribe(x => {
-        if (x) {
-          this.sendMatchMakingMessage(player.id);
-        }
-      })
+      this.subscribeToArenaSocket(player);
     }
   
-    connectByPlayerName(player, name : string) {
+    connectByPlayerName(player : Player, name : string) {
       console.log('::Connecting to ' + name);
-      this.arenaService.connectByPlayerName(player.id, name).subscribe(
-        x => {
-          this.setArenaId(<number> x);
-        },
-        y => {
+      this.queue = "PRIVATE";
+      this.subscribeToQueue(this.arenaService.connectByPlayerName(player, name));
 
-        },
-        () => {
-          this.initSocket();
-        },
-      );
-
-      this.arenaService.websocketReady.subscribe(x => {
-        if (x) {
-          this.sendMatchMakingMessage(player.id);
-        }
-      })
+      this.subscribeToArenaSocket(player);
     }
 
     initSocket() {
@@ -331,11 +315,12 @@ export class ArenaStore {
     }
 
 
-    sendMatchMakingMessage(playerId) {
+    sendMatchMakingMessage(playerId, queue) {
       console.log("::Sent MATCH_MAKING Message");
       this.playerId = playerId;
       let msg = {
         type: "MATCH_MAKING",
+        queue: queue,
         char1: this.allies[0].id,
         char2: this.allies[1].id,
         char3: this.allies[2].id,

@@ -43,16 +43,34 @@ export class LoginStore {
   }
 
   loginPlayer(req) {
-    this.loginService.initPlayer(req).pipe(take(1)).subscribe(
+    this.loginService.loginPlayer(req).pipe(take(1)).subscribe(
       x => {
-        this.setPlayer(x);
+        if (x) {
+          this.setPlayer(x);
+          this.setLoggedIn(true);
+        }
       },
-      y => {},
+      y => {
+        console.log(y);
+      },
       () => {
-        this.setLoggedIn(true);
-
-        // call for and get available characters from here??
-      },
+      }
     );
+  }
+
+  signupPlayer(req) {
+    this.loginService.signupPlayer(req).pipe(take(1)).subscribe(
+      x => {
+        if (x) {
+          this.setPlayer(x);
+          this.setLoggedIn(true);
+        }
+      },
+      y => {
+        console.log(y);
+      },
+      () => {
+      }
+    )
   }
 }

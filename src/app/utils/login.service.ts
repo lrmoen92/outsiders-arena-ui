@@ -17,8 +17,12 @@ export class LoginService {
       this.httpClient = httpClient;
     }
 
-    initPlayer(req) : Observable<Player> {
+    loginPlayer(req) : Observable<Player> {
       return <Observable<Player>> this.httpClient.post(URLS.playerLogin, req);
+    }
+
+    signupPlayer(req) : Observable<Player> {
+      return <Observable<Player>> this.httpClient.post(URLS.playerSignup, req);
     }
     
 }

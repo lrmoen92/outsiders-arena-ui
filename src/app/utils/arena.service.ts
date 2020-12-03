@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { Player } from '../model/api-models';
 import { URLS } from '../utils/constants';
 
 @Injectable(
@@ -31,7 +32,7 @@ export class ArenaService {
       return this.httpClient.get(URLS.playerQuickArena + player.id + '/' + player.level);
     }
   
-    connectByPlayerName(player, name : string) {
+    connectByPlayerName(player : Player, name : string) {
       console.log('::Connecting to ' + name);
       return this.httpClient.get(URLS.playerArena + player.id + '/' + name)
     }
