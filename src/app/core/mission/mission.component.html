@@ -2,6 +2,6 @@
 MISSION COMPONENT
 </div>
 
-<div *ngFor="let mission of allMissions">
+<div *ngFor="let mission of allMissions | async">
     {{mission.name}}
 </div>

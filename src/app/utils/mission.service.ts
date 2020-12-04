@@ -15,7 +15,7 @@ export class MissionService {
     this.httpClient = httpClient;
   }
 
-  initCharacters() {
+  initMissions() {
     return this.httpClient.get(URLS.missions);
   }
 }

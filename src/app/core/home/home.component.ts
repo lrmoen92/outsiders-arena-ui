@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { take } from 'rxjs/operators';
-import { CharacterStore } from 'src/app/utils/character.store';
 
 @Component({
   selector: 'home-root',
@@ -9,13 +7,10 @@ import { CharacterStore } from 'src/app/utils/character.store';
 })
 export class HomeComponent implements OnInit {
 
-  characterStore: CharacterStore;
-
-  constructor(characterStore : CharacterStore) {
-    this.characterStore = characterStore;
+  constructor() {
   }
   
   ngOnInit() {
-    this.characterStore.initCharacters();
+
   }
 }

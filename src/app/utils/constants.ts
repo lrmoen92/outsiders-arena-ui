@@ -14,6 +14,7 @@ export const URLS = {
     playerLogin : 'http://' + domain + '/api/player/login/',
     playerSignup : 'http://' + domain + '/api/player/signup/',
     characters : 'http://' + domain + '/api/character/',
+    missions : 'http://' + domain + '/api/mission/',
 
     battleSocket : 'ws://' + domain + '/arena/',
     chatSocket : 'ws://' + domain + '/chat/'

@@ -1,5 +1,8 @@
-import { Component, Input, OnInit, } from '@angular/core';
-import { Character, Mission } from 'src/app/model/api-models';
+import { Component, OnInit, } from '@angular/core';
+import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { Mission } from 'src/app/model/api-models';
+import { MissionStore } from 'src/app/utils/mission.store';
 
 @Component({
   selector: 'mission-root',
@@ -8,24 +11,16 @@ import { Character, Mission } from 'src/app/model/api-models';
 })
 export class MissionComponent implements OnInit {
 
-  allCharacters : Array<Character>;
-
-  characterStore : CharacterStore;
-  loginStore : LoginStore;
+  allMissions : Observable<Array<Mission>>;
+  missionStore : MissionStore;
 
 	constructor(
-		httpClient : HttpClient, 
-    characterStore : CharacterStore,
-    loginStore : LoginStore
+    missionStore : MissionStore
 	) {
-    this.httpClient = httpClient;
-    this.characterStore = characterStore;
-    this.loginStore = loginStore;
+    this.missionStore = missionStore;
   }
   
   ngOnInit() {
-    this.characterStore.getCharacters().pipe(take(1)).subscribe(x => {
-      this.allCharacters = x;
-    })
+    this.allMissions = this.missionStore.getMissions();
   }
 }

@@ -1,9 +1,7 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, } from '@angular/core';
-import { take } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { Character } from 'src/app/model/api-models';
 import { CharacterStore } from '../../utils/character.store';
-import { LoginStore } from '../../utils/login.store';
 
 @Component({
   selector: 'character-root',
@@ -12,25 +10,16 @@ import { LoginStore } from '../../utils/login.store';
 })
 export class CharacterComponent implements OnInit {
 
-  allCharacters : Array<Character>;
-
-  httpClient: HttpClient; 
+  allCharacters : Observable<Array<Character>>;
   characterStore : CharacterStore;
-  loginStore : LoginStore;
 
 	constructor(
-		httpClient : HttpClient, 
-    characterStore : CharacterStore,
-    loginStore : LoginStore
+    characterStore : CharacterStore
 	) {
-    this.httpClient = httpClient;
     this.characterStore = characterStore;
-    this.loginStore = loginStore;
   }
   
   ngOnInit() {
-    this.characterStore.getCharacters().pipe(take(1)).subscribe(x => {
-      this.allCharacters = x;
-    })
+    this.allCharacters = this.characterStore.getCharacters();
   }
 }

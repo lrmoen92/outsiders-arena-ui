@@ -2,6 +2,6 @@
 CHARACTER COMPONENT
 </div>
 
-<div *ngFor="let char of allCharacters">
+<div *ngFor="let char of allCharacters | async">
     {{char.name}}
 </div>

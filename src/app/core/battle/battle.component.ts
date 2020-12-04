@@ -5,6 +5,7 @@ import { CharacterStore } from '../../utils/character.store';
 import { serverPrefix } from '../../utils/constants';
 import { LoginStore } from '../../utils/login.store';
 import { take } from 'rxjs/operators'
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'battle-root',
@@ -13,14 +14,16 @@ import { take } from 'rxjs/operators'
 })
 export class BattleComponent implements OnInit, OnDestroy {
 
+  allCharacters$ : Observable<Array<Character>>;
   allCharacters : Array<Character>;
 
   characterPortraits : Map<number, Portrait> = new Map();
 
-  myCharacters : Array<Character>;
+  myCharacters : Array<Character> = [];
 
   inBattle : boolean;
 
+  player$ : Observable<Player>;
   player : Player;
 
   arenaId : number;
@@ -46,53 +49,32 @@ export class BattleComponent implements OnInit, OnDestroy {
   }
   
   ngOnInit() {
+		this.allCharacters$ = this.characterStore.getCharacters();
+    this.player$ = this.loginStore.getPlayer();
 
-    // this.arenaStore.disconnect();
-    
-		this.characterStore.getCharacters().pipe(take(1)).subscribe( 
-      x => {
-        console.log(x);
-        if (x) {
-          this.allCharacters = x;
-          for(let c of x) {
-            let portrait : Portrait = {
-              style : {opacity : 1.0},
-              url : this.imgPrefix + c.avatarUrl
-            }
-            this.characterPortraits.set(c.id, portrait);
-          }
-          
-        }
-      },
-      y => {
-
-      },
-      () => {
-
-      }
-    );
-
-    this.loginStore.getPlayer().subscribe( x => {
-      if (x) {
-        this.player = x;
-
-        console.log(x);
-        if (!this.myCharacters) {
-          this.myCharacters = [];
-        }
-        for (let c of this.allCharacters) {
-          if (x.characterIdsUnlocked.includes(c.id)) {
-            this.myCharacters.push(c);
-          }
-        }
-      }
+    this.player$.subscribe(x => {
+      this.player = x;
     });
-    
+
+    this.allCharacters$.subscribe(x => {
+      this.allCharacters = x;
+        for(let c of x) {
+          let portrait : Portrait = {
+            style : {opacity : 1.0},
+            url : this.imgPrefix + c.avatarUrl
+          }
+          this.characterPortraits.set(c.id, portrait);
+            if (this.player.characterIdsUnlocked.includes(c.id)) {
+              this.myCharacters.push(c);
+            }
+        }
+    });
+
     this.arenaStore.getInBattle().subscribe( x => {
       if (x) {
         this.inBattle = x;
       }
-    })
+    });
   }
 
   

@@ -3,21 +3,21 @@
     <div>
         <div *ngIf="player" class="playerInfo">
             <img [src]="player.avatarUrl" id="player-portrait">
-        <br>
+            <br>
             {{ player.displayName }}
         </div>
 
         <div id="battle-select">
-        <button (click)="findLadderBattle()">
-            LADDER MATCH
-        </button>
-        <button (click)="findQuickBattle()">
-            QUICK MATCH
-        </button>
-        <button (click)="findPrivateBattle()">
-            PRIVATE MATCH
-        </button>
-        <br>
+            <button (click)="findLadderBattle()">
+                LADDER MATCH
+            </button>
+            <button (click)="findQuickBattle()">
+                QUICK MATCH
+            </button>
+            <button (click)="findPrivateBattle()">
+                PRIVATE MATCH
+            </button>
+            <br>
             <input [(ngModel)]="opponentName" placeholder="Opponent's Name"/>
         </div>
     </div>
