@@ -11,6 +11,7 @@ import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 import { interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators'
 import { ChangeDetectionStrategy } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'arena-root',
@@ -24,6 +25,7 @@ export class ArenaComponent implements OnInit {
 	// ------ PROPERTIES ----------------------------------------------------------------------------------------------------
 	// ======================================================================================================================
 
+	router : Router;
 
 	loginStore : LoginStore;
 	characterStore : CharacterStore;
@@ -117,14 +119,18 @@ export class ArenaComponent implements OnInit {
 
 	constructor(
 		characterStore : CharacterStore,
-		arenaStore : ArenaStore
+		arenaStore : ArenaStore,
+		router : Router
 	) {
 		this.characterStore = characterStore;
 		this.arenaStore = arenaStore;
+		this.router = router;
 	}
 
 	ngOnInit() {
-		this.arenaStore.getOpponent().subscribe( x => {
+		this.arenaStore.getOpponent()
+		.pipe(takeUntil(this.gameOver$))
+		.subscribe( x => {
 			if (x) {
 				this.opponent = x;
 			}
@@ -160,21 +166,30 @@ export class ArenaComponent implements OnInit {
 	}
 
 	subToVictory() {
-		this.arenaStore.getVictory().subscribe(x => {
+		this.arenaStore.getVictory()
+		.pipe(takeUntil(this.gameOver$))
+		.subscribe(x => {
 			if (x !== null) {
-				if (x) {
+				if (x.victory) {
 					this.playAudio("victory");
-					alert("YOU HAVE WON");
 				} else {
-					this.playAudio("defeat");
-					alert("YOU HAVE LOST");
+					this.playAudio("loss");
 				}
+				alert(x.progressString);
+				this.unsubToBattle();
 			}
 		})
 	}
 
+	unsubToBattle() {
+		this.gameOver$.next(true);
+		this.router.navigate(['/']);
+	}
+
 	subscribeToBattle() {		
-		this.arenaStore.getBattle().subscribe(x => {
+		this.arenaStore.getBattle()
+		.pipe(takeUntil(this.gameOver$))
+		.subscribe(x => {
 			if (x) {
 
 				console.log(x);
@@ -189,14 +204,28 @@ export class ArenaComponent implements OnInit {
 					this.isPlayerOne = this.player.id === this.battle.playerIdOne;
 				}
 
+				let iStarted : boolean = 
+					(this.isPlayerOne && this.battle.playerOneStart) ||
+					(!this.isPlayerOne && !this.battle.playerOneStart);
+
+				this.hasTurn = 
+					((this.battle.turn % 2 === 0) && iStarted) ||
+					((this.battle.turn % 2 !== 0) && !iStarted);
+
+				let playerString = this.isPlayerOne ? "I'm Player One, and " : "I'm Player Two, and ";
+				console.log(playerString + "I just " + (this.hasTurn ? "began" : "ended") +" my turn.");
 				let team = this.isPlayerOne ? this.battle.playerOneTeam : this.battle.playerTwoTeam;
 				let enemies = this.isPlayerOne ? this.battle.playerTwoTeam : this.battle.playerOneTeam;
 
+				if (!this.hasTurn) {
+					this.cleanUpPhase();
+				}
+
 				if (this.isPlayerOne) {
 					this.setPlayerEnergy(this.serverEnergyToPlayerEnergy(this.battle.playerOneEnergy));
-				  } else {
+				} else {
 					this.setPlayerEnergy(this.serverEnergyToPlayerEnergy(this.battle.playerTwoEnergy));
-				  }
+				}
 				
 				if (this.battle.turn === 0) {
 					for(let c of team) {
@@ -225,8 +254,6 @@ export class ArenaComponent implements OnInit {
 					}
 				}
 
-				console.log(this.battlePortraits);
-
 				for (let c of this.battleAllies) {
 					for (let d of team) {
 						if (c.position == d.position) {
@@ -250,23 +277,6 @@ export class ArenaComponent implements OnInit {
 				this.battleAllies = team;
 				this.battleEnemies = enemies;
 				this.filterEffects(this.battleAllies, this.battleEnemies);
-
-				let iStarted : boolean = 
-					(this.isPlayerOne && this.battle.playerOneStart) ||
-					(!this.isPlayerOne && !this.battle.playerOneStart);
-
-				this.hasTurn = 
-					((this.battle.turn % 2 === 0) && iStarted) ||
-					((this.battle.turn % 2 !== 0) && !iStarted);
-
-				let playerString = this.isPlayerOne ? "I'm Player One, and " : "I'm Player Two, and ";
-				console.log(playerString + "I just " + (this.hasTurn ? "began" : "ended") +" my turn.");
-
-				if (this.hasTurn) {
-					this.sendCostCheck();
-				} else {
-					this.cleanUpPhase();
-				}
 			}
 		})
 	}
@@ -276,7 +286,6 @@ export class ArenaComponent implements OnInit {
 	// ======================================================================================================================
 
 	playAudio(sound : string){
-
 		if (this.playingAudio){
 			if (this.playingAudio.ended) {
 				this.stopAudio();
@@ -290,26 +299,29 @@ export class ArenaComponent implements OnInit {
 			
 			this.playingAudio.load();
 			this.playingAudio.play();
-		} else if (!this.secondaryAudio) {
-			if (this.playingAudio.src !== this.imgPrefix + "/assets/sounds/" + sound + ".wav") {
+		} else {
+			if (this.secondaryAudio){
+				if (this.secondaryAudio.ended) {
+					this.stopSecondary();
+				}
+			}
+			if (!this.secondaryAudio) {
 				this.secondaryAudio = new Audio();
 				this.secondaryAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
 				this.secondaryAudio.volume = this.volume;
 
 				this.secondaryAudio.load();
 				this.secondaryAudio.play();
+			} else {
+				this.stopBoth();
+				this.playAudio(sound);
 			}
-		} else {
-			this.stopAudio();
-
-			this.playingAudio = new Audio();
-			this.playingAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
-			this.playingAudio.volume = this.volume;
-
-			this.playingAudio.load();
-			this.playingAudio.play();
 		}
+	}
 
+	stopBoth() {
+		this.stopAudio;
+		this.stopSecondary;
 	}
 
 	stopAudio() {
@@ -317,6 +329,9 @@ export class ArenaComponent implements OnInit {
 			this.playingAudio.pause();
 			this.playingAudio = null;
 		}
+	}
+
+	stopSecondary() {
 		if (this.secondaryAudio) {
 			this.secondaryAudio.pause();
 			this.secondaryAudio = null;
@@ -343,7 +358,7 @@ export class ArenaComponent implements OnInit {
 
 	startTimer() {
 		this.getClock()
-		// .pipe(takeUntil(this.restart$))
+		.pipe(takeUntil(this.gameOver$))
 		.subscribe(
 			i => {
 				let val = this._timeLeft.getValue();
@@ -386,7 +401,9 @@ export class ArenaComponent implements OnInit {
 	// ======================================================================================================================
 
 	initEnergy() {
-		this.playerEnergy.subscribe( x => {
+	this.playerEnergy	
+		.pipe(takeUntil(this.gameOver$))
+		.subscribe( x => {
 			console.log("Player Energy: ");
 			console.log(x);
 			x.sort((a, b) => {
@@ -449,6 +466,8 @@ export class ArenaComponent implements OnInit {
 					this.spentEnergy.push(str);
 				}
 			}
+			
+			this.sendCostCheck();
 		})
 	}
 
@@ -986,7 +1005,6 @@ export class ArenaComponent implements OnInit {
 			}
 
 			this.confirmAbility(this.chosenAbility, tarArray);
-			this.sendCostCheck();
 		} else {
 			// TODO:
 			// clicking targets should show character blurb normally (duh)
@@ -1175,11 +1193,13 @@ export class ArenaComponent implements OnInit {
 
 	sendCostCheck() {
 		
-		let allyAbilityCosts = [];
-		for (let ability of this.allyAbilities()) {
-			allyAbilityCosts.push(ability.cost);
+		if (this.hasTurn) {
+			let allyAbilityCosts = [];
+			for (let ability of this.allyAbilities()) {
+				allyAbilityCosts.push(ability.cost);
+			}
+			this.arenaStore.sendCostCheck(allyAbilityCosts, this.chosenAbilities);
 		}
-		this.arenaStore.sendCostCheck(allyAbilityCosts, this.chosenAbilities);
 	}
 
 	sendTargetCheck(){

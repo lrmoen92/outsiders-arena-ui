@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, CostCheckDTO, Player } from '../model/api-models';
+import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, CostCheckDTO, GameEnd, Player } from '../model/api-models';
 import { ArenaService } from './arena.service';
 
 @Injectable(
@@ -15,7 +15,6 @@ export class ArenaStore {
 
     _player : BehaviorSubject<Player> = new BehaviorSubject(null);
     player : Observable<Player> = this._player.asObservable();
-    playerSub : Player;
     
     allies : Array<Character>;
 
@@ -29,14 +28,17 @@ export class ArenaStore {
     hasTurn: Observable<boolean> = this._hasTurn.asObservable();
     
 
-    _victory: BehaviorSubject<boolean> = new BehaviorSubject(null);
-    victory: Observable<boolean> = this._victory.asObservable();
+    _victory: BehaviorSubject<GameEnd> = new BehaviorSubject(null);
+    victory: Observable<GameEnd> = this._victory.asObservable();
+
+    loserId: number;
+    winnerId: number;
 
     getVictory() {
       return this.victory;
     }
 
-    setVictory(next) {
+    setVictory(next : GameEnd) {
       this._victory.next(next);
     }
 
@@ -124,12 +126,11 @@ export class ArenaStore {
     }
 
     getCurrentPlayer() {
-      return this.playerSub;
+      return this._player.getValue();
     }
 
     setPlayer(next) {
       this._player.next(next);
-      this.playerSub = next;
     }
 
     constructor(arenaService : ArenaService) {
@@ -212,8 +213,8 @@ export class ArenaStore {
               this.handleEnergyTradeResponse(msg);
             } else if (mtp === "END") {
               this.handleTurnEndResponse(msg);
-            } else if (mtp === "SURRENDER") {
-              this.handleSurrenderResponse(msg);
+            } else if (mtp === "GAME_END") {
+              this.handleGameEndResponse(msg);
             } else {
               console.log("Unrecognized Message");
             }
@@ -275,11 +276,16 @@ export class ArenaStore {
     }
     
 
-    handleSurrenderResponse(msg) {
-      if (this.getCurrentPlayer().id === msg.playerId) {
-        this.setVictory(false);
+    handleGameEndResponse(msg) {
+      let gameEnd = new GameEnd();
+      if (this.getCurrentPlayer().id === this.loserId) {
+        gameEnd.victory = false;
+        gameEnd.progressString = msg.loserString; 
+        this.setVictory(gameEnd);
       } else {
-        this.setVictory(true);
+        gameEnd.victory = true;
+        gameEnd.progressString = msg.winnerString;
+        this.setVictory(gameEnd);
       }
       this.setInBattle(false);
       this.setBattle(null);
@@ -299,16 +305,11 @@ export class ArenaStore {
       }
 
       let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
-      let defeat = team[0].dead && team[1].dead && team[2].dead;
 
       if (victory) {
-        this.setInBattle(false);
-        this.setVictory(true);
-      }
-
-      if (defeat) {
-        this.setInBattle(false);
-        this.setVictory(false);
+        this.loserId = this._opponent.getValue().id;
+        this.winnerId = this.getCurrentPlayer().id;
+        this.sendGameEndMessage();
       }
       
       this.setBattle(msg.battle);
@@ -371,11 +372,19 @@ export class ArenaStore {
 
     surrender() {
       console.log("::Sent SURRENDER Message");
+      this.loserId = this.getCurrentPlayer().id;
+      this.winnerId = this._opponent.getValue().id;
       // just manually kill my team and send turn end
+      this.sendGameEndMessage();
+    }
+
+    sendGameEndMessage() {
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
-          type: "SURRENDER",
-          playerId: this.getCurrentPlayer().id
+          type: "GAME_END",
+          loserId: this.loserId,
+          winnerId: this.winnerId,
+          arenaId: this.arenaId
         })
       )
     }

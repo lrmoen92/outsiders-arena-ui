@@ -149,9 +149,6 @@ export class Battle {
 
 export class GameEnd {
     victory: boolean;
-    playerId: number;
-    opponentId: number;
-    xpDiff: number;
-    missionProgress: boolean;
+    progressString: string;
 }
 

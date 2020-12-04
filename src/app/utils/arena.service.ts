@@ -73,6 +73,7 @@ export class ArenaService {
 
     handleMessage() {
       this.websocket.onmessage = response => {
+        console.log(response);
         this._socketMessage.next(JSON.parse(response.data));
       }
     }
