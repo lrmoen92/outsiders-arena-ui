@@ -17,7 +17,7 @@
     <br>
     <div *ngFor="let prog of player.missionProgress">
         Mission: {{ prog.missionId }}
-        <div *ngFor="let req of prog.missionRequirements">
+        <div *ngFor="let req of prog.requirements">
             Wins with {{ req.userFaction }} vs {{ req.targetFaction }} : {{ req.amount }} / Total
         </div>
     </div>

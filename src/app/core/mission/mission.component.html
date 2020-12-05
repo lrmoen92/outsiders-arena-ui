@@ -3,5 +3,9 @@ MISSION COMPONENT
 </div>
 
 <div *ngFor="let mission of allMissions | async">
-    {{mission.name}}
+    
+    Mission #{{ mission.id }}: {{mission.name}}
+    <div *ngFor="let req of mission.requirements">
+        Win with {{ req.userFaction }} vs {{ req.targetFaction }} {{ req.amount }} times.
+    </div>
 </div>
