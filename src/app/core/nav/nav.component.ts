@@ -53,4 +53,8 @@ export class NavComponent implements OnInit {
   goCharacters(){
     this.router.navigate(['character'])
   }
+
+  goPlayer(){
+    this.router.navigate(['player'])
+  }
 }

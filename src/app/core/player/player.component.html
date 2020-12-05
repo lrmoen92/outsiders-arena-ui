@@ -1,0 +1,24 @@
+<div>
+ PLAYER COMPONENT
+</div>
+
+<div class="playerInfo">
+    <img [src]="player.avatarUrl" id="player-portrait">
+    <br>
+    {{ player.displayName }}
+    <br>
+    Level: {{ player.level }}
+    <br>
+    {{ player.xp }}/100 XP
+    <br>
+    <div *ngFor="let charId of player.characterIdsUnlocked">
+        Unlocked Character: {{ charId }}
+    </div>
+    <br>
+    <div *ngFor="let prog of player.missionProgress">
+        Mission: {{ prog.missionId }}
+        <div *ngFor="let req of prog">
+            Wins with {{ req.userFaction }} vs {{ req.targetFaction }} : {{ req.amount }} / Total
+        </div>
+    </div>
+</div>

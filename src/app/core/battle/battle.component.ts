@@ -1,18 +1,18 @@
-import { Component, OnDestroy, OnInit, } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit, } from '@angular/core';
 import { Battle, Character, Player, Portrait } from 'src/app/model/api-models';
 import { ArenaStore } from '../../utils/arena.store';
 import { CharacterStore } from '../../utils/character.store';
 import { serverPrefix } from '../../utils/constants';
 import { LoginStore } from '../../utils/login.store';
-import { take } from 'rxjs/operators'
-import { Observable } from 'rxjs';
+import { take, takeUntil } from 'rxjs/operators'
+import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'battle-root',
   templateUrl: './battle.component.html',
   styleUrls: ['./battle.component.css']
 })
-export class BattleComponent implements OnInit, OnDestroy {
+export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 
   allCharacters$ : Observable<Array<Character>>;
   allCharacters : Array<Character>;
@@ -37,6 +37,11 @@ export class BattleComponent implements OnInit, OnDestroy {
   arenaStore : ArenaStore;
   loginStore : LoginStore;
   characterStore : CharacterStore;
+  
+  battleSub : Subscription;
+	playerSub: Subscription;
+	allCharactersSub: Subscription;
+	destroy$: Subject<boolean> = new Subject();
 
 	constructor(
     arenaStore : ArenaStore,
@@ -47,16 +52,25 @@ export class BattleComponent implements OnInit, OnDestroy {
     this.loginStore = loginStore;
     this.characterStore = characterStore;
   }
+
+  ngAfterViewInit() {
+  }
   
   ngOnInit() {
-		this.allCharacters$ = this.characterStore.getCharacters();
-    this.player$ = this.loginStore.getPlayer();
+	this.initSubscriptions();
+	this.initBattleSub();
+  }
 
-    this.player$.subscribe(x => {
+  initSubscriptions() {
+    this.loginStore.getPlayer()
+	.pipe(takeUntil(this.destroy$))
+	.subscribe(x => {
       this.player = x;
     });
 
-    this.allCharacters$.subscribe(x => {
+    this.characterStore.getCharacters()
+	.pipe(takeUntil(this.destroy$))
+	.subscribe(x => {
       this.allCharacters = x;
         for(let c of x) {
           let portrait : Portrait = {
@@ -69,18 +83,20 @@ export class BattleComponent implements OnInit, OnDestroy {
             }
         }
     });
-
-    this.arenaStore.getInBattle().subscribe( x => {
-      if (x) {
-        this.inBattle = x;
-      }
-    });
   }
 
-  
+	initBattleSub() {
+		this.arenaStore.getInBattle()
+		.pipe(takeUntil(this.destroy$))
+		.subscribe( x => {
+			if (x) {
+				this.inBattle = x;
+			}
+		});
+	}
 
 	ngOnDestroy() {
-		// this.arenaStore.disconnect();
+		this.destroy$.next(true);
 	}
 
 
@@ -110,8 +126,8 @@ export class BattleComponent implements OnInit, OnDestroy {
 		if (this.allies.length !== 3) {
 			alert ("You must select three characters");
 		} else {
-			this.arenaStore.setAllies(this.allies);
-			this.arenaStore.connectToLadder(this.player);
+			this.arenaStore.connectToLadder(this.player, this.allies);
+		
 		}
 	}
 	
@@ -119,8 +135,7 @@ export class BattleComponent implements OnInit, OnDestroy {
 		if (this.allies.length !== 3) {
 			alert ("You must select three characters");
 		} else {
-			this.arenaStore.setAllies(this.allies);
-			this.arenaStore.connectToQuick(this.player);
+			this.arenaStore.connectToQuick(this.player, this.allies);
 		}
 	}
 
@@ -129,8 +144,7 @@ export class BattleComponent implements OnInit, OnDestroy {
 			if (this.allies.length !== 3) {
 				alert ("You must select three characters");
 			} else {
-				this.arenaStore.setAllies(this.allies);
-				this.arenaStore.connectByPlayerName(this.player, this.opponentName);
+				this.arenaStore.connectByPlayerName(this.player, this.opponentName, this.allies);
 			}
 		} else {
 			alert("You must enter an opponent's display name.")

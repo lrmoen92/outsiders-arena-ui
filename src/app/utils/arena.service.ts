@@ -58,11 +58,19 @@ export class ArenaService {
     }
 
     disconnect() {
+      this.clearObservables();
       if (this.websocket != null) {
           this.websocket.close();
           this.websocket = null;
           console.log("::Disconnected");
       }
+    }
+
+    clearObservables() {
+      this._websocketReady = new BehaviorSubject(false);
+      this._socketMessage = new BehaviorSubject(null);
+      this.websocketReady = this._websocketReady.asObservable();
+      this.socketMessage = this._socketMessage.asObservable();
     }
 
     sendWebsocketMessage(str) {

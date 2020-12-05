@@ -1,5 +1,5 @@
 
-<div id="battleDiv">
+<div id="battleDiv" *ngIf="this.arenaStore.getBattle() | async">
   <div id="battle">
     <div id="header">
 
@@ -104,7 +104,7 @@
           </div>
       </div>
 
-      <div id="opponentInfo">
+      <div id="opponentInfo" *ngIf="opponent">
         <img [src]="opponent.avatarUrl" id="opponent-portrait">
         <br>
         {{ opponent.displayName }}

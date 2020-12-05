@@ -1,4 +1,4 @@
-import {  Component, Input, OnInit } from '@angular/core';
+import {  AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Battle, Character, Player, CharacterInstance, AbilityTargetDTO, Ability, Effect, BattleEffect, Portrait, PlayerEnergy} from 'src/app/model/api-models';
 import { serverPrefix } from 'src/app/utils/constants';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./arena.component.css']
 })
-export class ArenaComponent implements OnInit {
+export class ArenaComponent implements OnInit, AfterViewInit {
 
 	// ======================================================================================================================
 	// ------ PROPERTIES ----------------------------------------------------------------------------------------------------
@@ -127,8 +127,17 @@ export class ArenaComponent implements OnInit {
 		this.router = router;
 	}
 
+	ngAfterViewInit() {
+		this.initSubscriptions();
+	}
+
 	ngOnInit() {
-		this.arenaStore.getOpponent()
+		// this.initSubscriptions();
+	}
+
+	initSubscriptions() {
+		this.arenaStore.
+		getOpponent()
 		.pipe(takeUntil(this.gameOver$))
 		.subscribe( x => {
 			if (x) {

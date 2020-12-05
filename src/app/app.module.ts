@@ -22,13 +22,15 @@ import { HomeComponent } from './core/home/home.component';
 import { LoginComponent } from './core/login/login.component';
 import { MissionComponent } from './core/mission/mission.component';
 import { NavComponent } from './core/nav/nav.component';
+import { PlayerComponent } from './core/player/player.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'battle', component: BattleComponent },
   { path: 'mission', component: MissionComponent },
-  { path: 'character', component: CharacterComponent }
+  { path: 'character', component: CharacterComponent },
+  { path: 'player', component: PlayerComponent }
   // { path: '**', component: PageNotFoundComponent },  // Wildcard route for a 404 page
 ];
 
@@ -43,6 +45,7 @@ const routes: Routes = [
     CharacterComponent,
     HomeComponent,
     MissionComponent,
+    PlayerComponent,
     PortraitPipe,
     AbilityPipe
   ],

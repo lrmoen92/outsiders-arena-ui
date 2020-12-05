@@ -14,36 +14,12 @@ export class ArenaStore {
     queue : string;
 
     _player : BehaviorSubject<Player> = new BehaviorSubject(null);
-    player : Observable<Player> = this._player.asObservable();
-    
-    allies : Array<Character>;
-
-    isPlayerOne : boolean;
-    _isPlayerOne: BehaviorSubject<boolean> = new BehaviorSubject(null);
 
     _inBattle: BehaviorSubject<boolean> = new BehaviorSubject(null);
     inBattle: Observable<boolean> = this._inBattle.asObservable();
 
     _hasTurn: BehaviorSubject<boolean> = new BehaviorSubject(null);
     hasTurn: Observable<boolean> = this._hasTurn.asObservable();
-    
-
-    _victory: BehaviorSubject<GameEnd> = new BehaviorSubject(null);
-    victory: Observable<GameEnd> = this._victory.asObservable();
-
-    loserId: number;
-    winnerId: number;
-
-    getVictory() {
-      return this.victory;
-    }
-
-    setVictory(next : GameEnd) {
-      this._victory.next(next);
-    }
-
-    _gameEnd: BehaviorSubject<boolean> = new BehaviorSubject(false);
-    gameEnd: Observable<boolean> = this._gameEnd.asObservable();
     
     _opponent: BehaviorSubject<Player> = new BehaviorSubject(null);
     opponent: Observable<Player> = this._opponent.asObservable();
@@ -60,9 +36,27 @@ export class ArenaStore {
     _availableTargets: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableTargets: Observable<Array<number>> = this._availableTargets.asObservable();
 
+    _victory: BehaviorSubject<GameEnd> = new BehaviorSubject(null);
+    victory: Observable<GameEnd> = this._victory.asObservable();
+
     playerId: any;
+    loserId: number;
+    winnerId: number;
+
+    getVictory() {
+      return this.victory;
+    }
+
+    setVictory(next : GameEnd) {
+      this._victory.next(next);
+    }
 
     
+    arenaIdSub : Subscription;
+    socketSub : Subscription;
+    socketReadySub : Subscription;
+
+
     /// GETTERS SETTERS////
 
     getInBattle() {
@@ -73,28 +67,12 @@ export class ArenaStore {
       this._inBattle.next(next);
     }
 
-    getOpponent() {
-      return this.opponent;
-    }
-
-    setOpponent(next) {
-      this._opponent.next(next);
-    }
-
     getBattle() {
       return this.battle;
     }
 
     setBattle(next) {
       this._battle.next(next);
-    }
-
-    getEnemies() {
-      return this.enemies;
-    }
-
-    setEnemies(next) {
-      this._enemies.next(next);
     }
 
     getAvailableAbilities() {
@@ -113,16 +91,18 @@ export class ArenaStore {
       this._availableTargets.next(next);
     }
 
-    setAllies(allies) {
-      this.allies = allies;
+
+
+    getOpponent() {
+      return this.opponent;
     }
 
-    setArenaId(num : number) {
-      this.arenaId = num;
+    setOpponent(next) {
+      this._opponent.next(next);
     }
 
-    getPlayer() {
-      return this.player;
+    getCurrentOpponent() {
+      return this._opponent.getValue();
     }
 
     getCurrentPlayer() {
@@ -133,24 +113,45 @@ export class ArenaStore {
       this._player.next(next);
     }
 
+
+    setArenaId(num : number) {
+      this.arenaId = num;
+    }
+
+    setQueue(queue : string) {
+      this.queue = queue;
+    }
+
     constructor(arenaService : ArenaService) {
       this.arenaService = arenaService;
     }
 
-    disconnect() {
-      this.arenaService.disconnect();
+    connectToLadder(player, allies) {
+      console.log('::Looking For Ladder Match');
+      this.setQueue("LADDER");
+
+      this.arenaIdSub = this.subscribeToQueue(this.arenaService.connectToLadder(player));
+      this.socketReadySub = this.subscribeToArenaSocket(player, allies);
+    }
+  
+    connectToQuick(player, allies) {
+      console.log('::Looking For Quick Match');
+      this.setQueue("QUICK");
+
+      this.arenaIdSub = this.subscribeToQueue(this.arenaService.connectToQuick(player));
+      this.socketReadySub = this.subscribeToArenaSocket(player, allies);
+    }
+  
+    connectByPlayerName(player : Player, name : string, allies) {
+      console.log('::Connecting to ' + name);
+      this.setQueue("PRIVATE");
+
+      this.arenaIdSub = this.subscribeToQueue(this.arenaService.connectByPlayerName(player, name));
+      this.socketReadySub = this.subscribeToArenaSocket(player, allies);
     }
 
-    subscribeToArenaSocket(player : Player) {
-      this.arenaService.websocketReady.subscribe(x => {
-        if (x) {
-          this.sendMatchMakingMessage(player.id, this.queue);
-        }
-      })
-    }
-
-    subscribeToQueue(obs : Observable<Object>) : Subscription {
-      return obs.subscribe(
+    subscribeToQueue(queue : Observable<Object>) : Subscription {
+      return queue.subscribe(
         x => {
           this.setArenaId(<number> x);
         },
@@ -159,45 +160,59 @@ export class ArenaStore {
         },
         () => {
           this.initSocket();
-        },
+        }
       );
     }
 
-    connectToLadder(player) {
-      console.log('::Looking For Ladder Match');
-      this.queue = "LADDER";
-      this.subscribeToQueue(this.arenaService.connectToLadder(player));
-
-      this.subscribeToArenaSocket(player);
-    }
-  
-    connectToQuick(player) {
-      console.log('::Looking For Quick Match');
-      this.queue = "QUICK";
-      this.subscribeToQueue(this.arenaService.connectToQuick(player));
-
-      this.subscribeToArenaSocket(player);
-    }
-  
-    connectByPlayerName(player : Player, name : string) {
-      console.log('::Connecting to ' + name);
-      this.queue = "PRIVATE";
-      this.subscribeToQueue(this.arenaService.connectByPlayerName(player, name));
-
-      this.subscribeToArenaSocket(player);
+    subscribeToArenaSocket(player : Player, allies) : Subscription {
+      return this.arenaService.websocketReady.subscribe(x => {
+        if (x) {
+          this.sendMatchMakingMessage(player.id, this.queue, allies);
+        }
+      })
     }
 
     initSocket() {
       this.arenaService.connectByArenaId(this.arenaId);
-      this.subscribeToSocket();
+      this.socketSub = this.subscribeToSocket();
+    }
+
+    disconnect() {
+      this.arenaIdSub.unsubscribe();
+      this.socketSub.unsubscribe();
+      this.socketReadySub.unsubscribe();
+      this.clearObservables();
+      this.arenaId = null;
+      this.queue = null;
+      this.arenaService.disconnect();
+    }
+
+    clearObservables() {
+      this._inBattle = new BehaviorSubject(null);
+      this._hasTurn = new BehaviorSubject(null);
+      this._opponent = new BehaviorSubject(null);
+      this._battle = new BehaviorSubject(null);
+      this._enemies = new BehaviorSubject([]);
+      this._availableAbilities = new BehaviorSubject([]);
+      this._availableTargets = new BehaviorSubject([]);
+      this._victory = new BehaviorSubject(null);
+
+      this.inBattle = this._inBattle.asObservable();
+      this.hasTurn = this._hasTurn.asObservable();
+      this.opponent = this._opponent.asObservable();
+      this.battle = this._battle.asObservable();
+      this.enemies = this._enemies.asObservable();
+      this.availableAbilities = this._availableAbilities.asObservable();
+      this.availableTargets = this._availableTargets.asObservable();
+      this.victory = this._victory.asObservable();
     }
 
     isConnected() {
       return this.arenaService.websocket.readyState === WebSocket.OPEN;
     }
 
-    subscribeToSocket(){
-      this.arenaService.socketMessage.subscribe(msg => {
+    subscribeToSocket() : Subscription {
+      return this.arenaService.socketMessage.subscribe(msg => {
         if (msg){
           let mtp = msg.type;
       
@@ -225,41 +240,18 @@ export class ArenaStore {
 
 
     handleInitResponse(msg) {
+      console.log(msg);
       let isPlayerOne = msg.battle.playerIdOne === this.playerId;
       if (isPlayerOne){
         this.setPlayer(msg.playerOne);
         this.setOpponent(msg.playerTwo);
-
-        let holder1 : Array<Character> = new Array();
-        holder1.push(msg.characters[0]);
-        holder1.push(msg.characters[1]);
-        holder1.push(msg.characters[2]);
-        this.setAllies(holder1);
-
-        let holder : Array<Character> = new Array();
-        holder.push(msg.characters[3]);
-        holder.push(msg.characters[4]);
-        holder.push(msg.characters[5]);
-        this.setEnemies(holder);
       } else {
         this.setPlayer(msg.playerTwo);
         this.setOpponent(msg.playerOne);
-
-        let holder1 : Array<Character> = new Array();
-        holder1.push(msg.characters[3]);
-        holder1.push(msg.characters[4]);
-        holder1.push(msg.characters[5]);
-        this.setAllies(holder1);
-
-        let holder : Array<Character> = new Array();
-        holder.push(msg.characters[0]);
-        holder.push(msg.characters[1]);
-        holder.push(msg.characters[2]);
-        this.setEnemies(holder);
       }
-
       this.setInBattle(true);
       this.setBattle(msg.battle);
+      console.log("END OF INIT");
     }
 
 
@@ -277,6 +269,8 @@ export class ArenaStore {
     
 
     handleGameEndResponse(msg) {
+      console.log("GAME END RESPONSE");
+      console.log(msg);
       let gameEnd = new GameEnd();
       if (this.getCurrentPlayer().id === this.loserId) {
         gameEnd.victory = false;
@@ -288,26 +282,23 @@ export class ArenaStore {
         this.setVictory(gameEnd);
       }
       this.setInBattle(false);
-      this.setBattle(null);
+      this.disconnect();
     }
     
 
     handleTurnEndResponse(msg) {
-      let team;
       let enemyTeam;
 
       if (msg.isPlayerOne) {
-        team = msg.battle.playerOneTeam;
         enemyTeam = msg.battle.playerTwoTeam;
       } else {
-        team = msg.battle.playerTwoTeam;
         enemyTeam = msg.battle.playerOneTeam;
       }
 
       let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
 
       if (victory) {
-        this.loserId = this._opponent.getValue().id;
+        this.loserId = this.getCurrentOpponent().id;
         this.winnerId = this.getCurrentPlayer().id;
         this.sendGameEndMessage();
       }
@@ -316,15 +307,15 @@ export class ArenaStore {
     }
 
 
-    sendMatchMakingMessage(playerId, queue) {
+    sendMatchMakingMessage(playerId, queue, allies) {
       console.log("::Sent MATCH_MAKING Message");
       this.playerId = playerId;
       let msg = {
         type: "MATCH_MAKING",
         queue: queue,
-        char1: this.allies[0].id,
-        char2: this.allies[1].id,
-        char3: this.allies[2].id,
+        char1: allies[0].id,
+        char2: allies[1].id,
+        char3: allies[2].id,
         playerId: playerId,
         arenaId: this.arenaId
       };
