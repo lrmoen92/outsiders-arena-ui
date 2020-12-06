@@ -2,7 +2,7 @@
  PLAYER COMPONENT
 </div>
 
-<div class="playerInfo">
+<div class="playerInfo" *ngIf="this.loginStore.getPlayer() | async">
     <img [src]="player.avatarUrl" id="player-portrait">
     <br>
     {{ player.displayName }}
@@ -11,14 +11,14 @@
     <br>
     {{ player.xp }}/100 XP
     <br>
-    <div *ngFor="let charId of player.characterIdsUnlocked">
-        Unlocked Character: {{ charId }}
-    </div>
+    Unlocked Characters:<span *ngFor="let charId of player.characterIdsUnlocked">{{ charId }}, </span>
     <br>
     <div *ngFor="let prog of player.missionProgress">
-        Mission: {{ prog.missionId }}
-        <div *ngFor="let req of prog.requirements">
-            Wins with {{ req.userFaction }} vs {{ req.targetFaction }} : {{ req.amount }} / Total
-        </div>
+        <span *ngIf="prog.missionId !== 0">
+            Mission: {{ prog.missionId }}
+            <div *ngFor="let req of prog.requirements">
+                Wins with {{ req.userFaction }} vs {{ req.targetFaction }} : {{ req.amount }} / Total
+            </div>
+        </span>
     </div>
 </div>

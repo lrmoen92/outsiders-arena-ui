@@ -28,6 +28,9 @@
             </div>
         <img *ngFor="let ally of allies" [src]="imgPrefix + ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
     </div>
+    <div *ngIf="lookingForBattle">
+        SEARCHING FOR BATTLE.... WAIT UP TO 30 SECONDS....
+    </div>
 </div>
 
 <div *ngIf="inBattle" id="in-battle">

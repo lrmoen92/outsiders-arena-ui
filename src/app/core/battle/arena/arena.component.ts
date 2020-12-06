@@ -1,4 +1,4 @@
-import {  AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import {  AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Battle, Character, Player, CharacterInstance, AbilityTargetDTO, Ability, Effect, BattleEffect, Portrait, PlayerEnergy} from 'src/app/model/api-models';
 import { serverPrefix } from 'src/app/utils/constants';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./arena.component.css']
 })
-export class ArenaComponent implements OnInit, AfterViewInit {
+export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	// ======================================================================================================================
 	// ------ PROPERTIES ----------------------------------------------------------------------------------------------------
@@ -28,7 +28,6 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 	router : Router;
 
 	loginStore : LoginStore;
-	characterStore : CharacterStore;
 	arenaStore : ArenaStore;
 	
 
@@ -118,12 +117,12 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 	// ======================================================================================================================
 
 	constructor(
-		characterStore : CharacterStore,
 		arenaStore : ArenaStore,
+		loginStore : LoginStore,
 		router : Router
 	) {
-		this.characterStore = characterStore;
 		this.arenaStore = arenaStore;
+		this.loginStore = loginStore;
 		this.router = router;
 	}
 
@@ -133,6 +132,14 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 
 	ngOnInit() {
 		// this.initSubscriptions();
+	}
+
+	ngOnDestroy() {
+		this.gameOver$.subscribe(x => {
+			if (!x) {
+				this.surrender();
+			}
+		})
 	}
 
 	initSubscriptions() {
@@ -181,6 +188,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 			if (x !== null) {
 				if (x.victory) {
 					this.playAudio("victory");
+					this.loginStore.setPlayer(x.player);
 				} else {
 					this.playAudio("loss");
 				}
@@ -226,16 +234,14 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 				let team = this.isPlayerOne ? this.battle.playerOneTeam : this.battle.playerTwoTeam;
 				let enemies = this.isPlayerOne ? this.battle.playerTwoTeam : this.battle.playerOneTeam;
 
-				if (!this.hasTurn) {
-					this.cleanUpPhase();
-				}
-
 				if (this.isPlayerOne) {
 					this.setPlayerEnergy(this.serverEnergyToPlayerEnergy(this.battle.playerOneEnergy));
 				} else {
 					this.setPlayerEnergy(this.serverEnergyToPlayerEnergy(this.battle.playerTwoEnergy));
 				}
 				
+				this.sendCostCheck();
+
 				if (this.battle.turn === 0) {
 					for(let c of team) {
 						let portrait : Portrait = this.characterPortraits.get(c.characterId);
@@ -286,6 +292,11 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 				this.battleAllies = team;
 				this.battleEnemies = enemies;
 				this.filterEffects(this.battleAllies, this.battleEnemies);
+				this.filterAbilities(this.battleAllies);
+				
+				if (!this.hasTurn) {
+					this.cleanUpPhase();
+				}
 			}
 		})
 	}
@@ -475,8 +486,6 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 					this.spentEnergy.push(str);
 				}
 			}
-			
-			this.sendCostCheck();
 		})
 	}
 
@@ -550,6 +559,9 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 		}
 		console.log("AFTER");
 		console.log(this.turnEnergy);
+		if (!force) {
+			this.sendCostCheck();
+		}
 	}
 
 	spend(energy: string, refund: boolean) {
@@ -658,6 +670,9 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 				this.spend(energy, true);
 			}
 		}
+		if (!force) {
+			this.sendCostCheck();
+		}
 	}
 
 	abilitiesAreChosen() {
@@ -714,6 +729,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 				this.randomsAreNeeded = true;
 			}
 		}
+		this.sendCostCheck();
 	}
 
 	refundCostTemporary(ability) {
@@ -744,6 +760,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 				}
 				if(this.randomsAreNeeded){
 					this.randomsNeeded--;
+					this.sendCostCheck();
 				}
 
 				if (this.randomsNeeded === 0) {
@@ -751,6 +768,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 				}
 			}
 		}
+		this.sendCostCheck();
 	}
 
 	clickEnergyTrade() {
@@ -824,37 +842,37 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 		let newAllies = [];
 		
 		for (let ally of this.allies) {
-		for (let battleAlly of battleAllies) {
-			if (ally.id === battleAlly.characterId) {
-	
-			let tempAlly : Character = JSON.parse(JSON.stringify((ally)));
-	
-			for (let effect of battleAlly.effects) {
-	
-				if (effect.statMods["COST_CHANGE"] !== null) {
-	
-				let num = effect.statMods["COST_CHANGE"];
-				if (num > 0) {
-					for (let i = num; i > 0; i--) {
-					tempAlly.abilities.forEach(a => {
-						a.cost.push("RANDOM");
-					})
-					}
-				} else if (num < 0) {
-					for (let i = num; i < 0; i++) {
-					tempAlly.abilities.forEach(a => {
-						if (a.cost.includes("RANDOM")) {
-						a.cost.splice(a.cost.findIndex(e => {return e === "RANDOM"}), 1);
+			for (let battleAlly of battleAllies) {
+				if (ally.id === battleAlly.characterId) {
+		
+				let tempAlly : Character = JSON.parse(JSON.stringify((ally)));
+		
+				for (let effect of battleAlly.effects) {
+					if (effect) {
+						if (effect.statMods["COST_CHANGE"] !== null) {
+							let num = effect.statMods["COST_CHANGE"];
+							if (num > 0) {
+								for (let i = num; i > 0; i--) {
+									tempAlly.abilities.forEach(a => {
+										a.cost.push("RANDOM");
+									})
+								}
+							} else if (num < 0) {
+								for (let i = num; i < 0; i++) {
+									tempAlly.abilities.forEach(a => {
+										if (a.cost.includes("RANDOM")) {
+											a.cost.splice(a.cost.findIndex(e => {return e === "RANDOM"}), 1);
+										}
+									})
+								}
+							}
 						}
-					})
 					}
 				}
+		
+				newAllies.push(tempAlly);
 				}
 			}
-	
-			newAllies.push(tempAlly);
-			}
-		}
 		}
 	
 		this.tempAllies = newAllies;
@@ -977,6 +995,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 		} else if(this.totalSpentEnergy > 0 && !this.abilitiesAreChosen()) {
 			alert("Finish your energy trade or put your spent energy back before choosing abilities!")
 		} else {
+			this.availableTargets = [-1,-1,-1,-1,-1,-1];
 			this.setChosenAbility(ability);
 			this.setActiveCharacterPosition(this.getCharacterPosition(ability.name));
 			console.log("Active Character Position = " + this.activeCharacterPosition);
@@ -991,6 +1010,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 			alert("That character can't be targeted with this ability!");
 		} else if (this.chosenAbility) {
 
+			this.availableAbilities = new Map();
 			let tarArray = [];
 			// check chosen ability if it's AOE, or take target enemy
 			if (this.chosenAbility.aoe) {
@@ -1207,7 +1227,7 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 			for (let ability of this.allyAbilities()) {
 				allyAbilityCosts.push(ability.cost);
 			}
-			this.arenaStore.sendCostCheck(allyAbilityCosts, this.chosenAbilities);
+			this.arenaStore.sendCostCheck(allyAbilityCosts, this.chosenAbilities, this.spentEnergy);
 		}
 	}
 
@@ -1288,11 +1308,11 @@ export class ArenaComponent implements OnInit, AfterViewInit {
 		this.chosenAbility = null;
 		this.hoveredAbility = null;
 		this.aoeTurnEffects = new Map();
+		this.setChosenAbilities([]);
+		this.setTurnEffects([]);
 		this.randomsNeeded = 0;
 		this.randomsAreNeeded = false;
 		this.showAreYouSure = false;
-		this.setChosenAbilities([]);
-		this.setTurnEffects([]);
 		this.refreshTradeState();
 		this.stopAudio();
 		this.disableAbilities();

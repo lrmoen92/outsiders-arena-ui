@@ -39,7 +39,7 @@ export class ArenaStore {
     _victory: BehaviorSubject<GameEnd> = new BehaviorSubject(null);
     victory: Observable<GameEnd> = this._victory.asObservable();
 
-    playerId: any;
+    playerId: number;
     loserId: number;
     winnerId: number;
 
@@ -181,9 +181,12 @@ export class ArenaStore {
       this.arenaIdSub.unsubscribe();
       this.socketSub.unsubscribe();
       this.socketReadySub.unsubscribe();
-      this.clearObservables();
       this.arenaId = null;
       this.queue = null;
+      this.playerId = null;
+      this.loserId = null;
+      this.winnerId = null;
+      this.clearObservables();
       this.arenaService.disconnect();
     }
 
@@ -271,14 +274,19 @@ export class ArenaStore {
     handleGameEndResponse(msg) {
       console.log("GAME END RESPONSE");
       console.log(msg);
+      console.log("CURRENT ID" + this.getCurrentPlayer().id);
+      console.log("LOSER ID" + this.loserId);
+      
       let gameEnd = new GameEnd();
       if (this.getCurrentPlayer().id === this.loserId) {
         gameEnd.victory = false;
-        gameEnd.progressString = msg.loserString; 
+        gameEnd.progressString = msg.loserString;
+        gameEnd.player = msg.loser;
         this.setVictory(gameEnd);
       } else {
         gameEnd.victory = true;
         gameEnd.progressString = msg.winnerString;
+        gameEnd.player = msg.winner
         this.setVictory(gameEnd);
       }
       this.setInBattle(false);
@@ -322,11 +330,12 @@ export class ArenaStore {
       this.arenaService.sendWebsocketMessage(JSON.stringify(msg));
     }
 
-    sendCostCheck(allyCosts, chosenAbilities) {
+    sendCostCheck(allyCosts, chosenAbilities, spentEnergy) {
       console.log("::Sent COST_CHECK Message");
       let costCheckDTO : CostCheckDTO = {
         allyCosts : allyCosts,
-        chosenAbilities : chosenAbilities
+        chosenAbilities : chosenAbilities,
+        spentEnergy : spentEnergy
       }
       
       const payload = {
@@ -363,8 +372,9 @@ export class ArenaStore {
 
     surrender() {
       console.log("::Sent SURRENDER Message");
+      console.log("Winner: " + this.winnerId + " Loser: " + this.loserId)
       this.loserId = this.getCurrentPlayer().id;
-      this.winnerId = this._opponent.getValue().id;
+      this.winnerId = this.getCurrentOpponent().id;
       // just manually kill my team and send turn end
       this.sendGameEndMessage();
     }

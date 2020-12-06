@@ -1,0 +1,98 @@
+
+.ally-portrait-small {
+    width : 50px;
+    height : 50px;
+}
+
+
+.RANDOM {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : black;
+}
+
+.STRENGTH {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : maroon;
+}
+
+.DEXTERITY {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    /* background-color : mediumseagreen; */
+    background-color : gold;
+    
+}
+
+.ARCANA {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : cornflowerblue;
+    
+}
+
+.DIVINITY {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+    background-color : white;
+    
+}
+
+.energy {
+    width : 10px;
+    height : 10px;
+    margin : 3px;
+    float : left;
+    border-width : 1px 1px 1px 1px;
+    border-radius : 2px;
+    border-style : solid;
+    border-color : black;
+}
+
+.energy-strength {
+    background-color : maroon;
+}
+
+.energy-dexterity {
+    /* background-color : mediumseagreen; */
+    background-color : gold;
+}
+
+.energy-arcana {
+    background-color : cornflowerblue;
+}
+
+.energy-divinity {
+    background-color : white;
+}

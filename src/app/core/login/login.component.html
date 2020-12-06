@@ -1,18 +1,20 @@
 <div id="splashscreen">
-    <button (click)="showLogin()">
-        LOGIN
-    </button>
-    <button (click)="showSignup()">
-        SIGNUP
-    </button>
-    <div *ngIf="loginButton">
+    <div *ngIf="!loginButton && !signupButton">
+        <button (click)="showLogin()">
+            LOGIN
+        </button>
+        <button (click)="showSignup()">
+            SIGNUP
+        </button>
+    </div>
+    <div *ngIf="loginButton && !signupButton">
         <input [(ngModel)]="playerNameOrEmail" placeholder="Display Name or Email Address"/>
         <input [(ngModel)]="playerPassword" placeholder="Password" type=password/>
         <button (click)="login()">
             LOGIN
         </button>
     </div>
-    <div *ngIf="signupButton">
+    <div *ngIf="signupButton && !loginButton">
         <input [(ngModel)]="playerEmail" placeholder="Email Address"/>
         <br />
         <input [(ngModel)]="playerPassword" placeholder="Password" type=password/>

@@ -77,7 +77,8 @@ export class BattleTurnDTO {
 
 export class CostCheckDTO {
     chosenAbilities : Array<AbilityTargetDTO>;
-    allyCosts : Array<Ability>
+    allyCosts : Array<Ability>;
+    spentEnergy : Array<string>;
 }
 
 export class Portrait {
@@ -150,5 +151,6 @@ export class Battle {
 export class GameEnd {
     victory: boolean;
     progressString: string;
+    player: Player;
 }
 

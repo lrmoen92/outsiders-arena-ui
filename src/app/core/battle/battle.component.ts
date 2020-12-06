@@ -34,6 +34,8 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
   
   opponentName : string;
 
+  lookingForBattle : boolean;
+
   arenaStore : ArenaStore;
   loginStore : LoginStore;
   characterStore : CharacterStore;
@@ -90,6 +92,7 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 		.pipe(takeUntil(this.destroy$))
 		.subscribe( x => {
 			if (x) {
+				this.lookingForBattle = false;
 				this.inBattle = x;
 			}
 		});
@@ -126,6 +129,7 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 		if (this.allies.length !== 3) {
 			alert ("You must select three characters");
 		} else {
+			this.lookingForBattle = true;
 			this.arenaStore.connectToLadder(this.player, this.allies);
 		
 		}
@@ -135,6 +139,7 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 		if (this.allies.length !== 3) {
 			alert ("You must select three characters");
 		} else {
+			this.lookingForBattle = true;
 			this.arenaStore.connectToQuick(this.player, this.allies);
 		}
 	}
@@ -144,6 +149,7 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 			if (this.allies.length !== 3) {
 				alert ("You must select three characters");
 			} else {
+				this.lookingForBattle = true;
 				this.arenaStore.connectByPlayerName(this.player, this.opponentName, this.allies);
 			}
 		} else {

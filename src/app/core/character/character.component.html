@@ -2,6 +2,32 @@
 CHARACTER COMPONENT
 </div>
 
-<div *ngFor="let char of allCharacters | async">
-    {{char.name}}
+<div>
+    <img *ngFor="let char of allCharacters | async" (click)="this.showCharacterInfo(char)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
 </div>
+
+<div *ngIf="selectedCharacter">
+    <div>
+        NAME: {{ selectedCharacter.name }}
+    </div>
+    <div>
+        ABILITIES: 
+        <img *ngFor="let ability of this.selectedCharacter.abilities" (click)="this.showAbilityInfo(ability)" [src]="imgPrefix + ability.abilityUrl" class="ally-portrait-small">
+    </div>
+</div>
+
+<div *ngIf="selectedAbility">
+    <div *ngFor="let energy of selectedAbility.cost" id="abilityCost" [class]="energy">
+    </div>
+    <div>{{ selectedAbility.name }}</div>
+    <div id="abilityTargets">Targets: {{ selectedAbility.targets }}</div>
+    <br>
+    <div>Cooldown: {{ selectedAbility.cooldown }}</div>
+    <div id="abilityTypes">{{ selectedAbility.types }}</div>
+    <br>
+    <div>{{ selectedAbility.description }}</div>
+</div>
+
+<button *ngIf="selectedAbility || selectedCharacter" (click)="this.back()">
+    BACK
+</button>

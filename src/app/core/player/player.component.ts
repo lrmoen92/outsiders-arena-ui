@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Player } from 'src/app/model/api-models';
 import { CharacterStore } from 'src/app/utils/character.store';
 import { LoginStore } from 'src/app/utils/login.store';
@@ -9,13 +10,14 @@ import { MissionStore } from 'src/app/utils/mission.store';
   templateUrl: './player.component.html',
   styleUrls: ['./player.component.css']
 })
-export class PlayerComponent implements OnInit {
+export class PlayerComponent implements OnInit, AfterViewInit {
 
   characterStore: CharacterStore;
   loginStore: LoginStore;
   missionStore: MissionStore;
 
-  player : Player;
+  player$ : Observable<Player>;
+  player: Player;
 
   constructor(
     characterStore : CharacterStore,
@@ -28,12 +30,12 @@ export class PlayerComponent implements OnInit {
   }
   
   ngOnInit() {
+    this.player$ = this.loginStore.getPlayer();
+    this.player$.subscribe(player => {
+      this.player = player;
+    })
+  }
 
-    this.loginStore.getPlayer().subscribe(p => {
-      if (p) {
-        this.player = p;
-      }
-    });
-    
+  ngAfterViewInit() {
   }
 }
