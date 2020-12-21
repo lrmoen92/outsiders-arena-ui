@@ -303,7 +303,7 @@ export class ArenaStore {
         enemyTeam = msg.battle.playerOneTeam;
       }
 
-      let victory = enemyTeam[0].dead && enemyTeam[1].dead && enemyTeam[2].dead;
+      let victory = enemyTeam[0].hp <=0 && enemyTeam[1].hp <=0 && enemyTeam[2].hp <=0;
 
       if (victory) {
         this.loserId = this.getCurrentOpponent().id;

@@ -1,4 +1,4 @@
-let prod = false;
+let prod = true;
 
 export const domainLocal = 'localhost:8817';
 // export const domainProd = '192.168.0.34:8171';

@@ -30,8 +30,8 @@ const routes: Routes = [
   { path: 'battle', component: BattleComponent },
   { path: 'mission', component: MissionComponent },
   { path: 'character', component: CharacterComponent },
-  { path: 'player', component: PlayerComponent }
-  // { path: '**', component: PageNotFoundComponent },  // Wildcard route for a 404 page
+  { path: 'player', component: PlayerComponent },
+  { path: '**', component: HomeComponent }  // Wildcard route for a 404 page
 ];
 
 @NgModule({
