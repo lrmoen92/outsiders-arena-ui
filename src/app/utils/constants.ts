@@ -7,7 +7,7 @@ export const domainLocal = 'localhost:8817';
 export const domainProd = '192.168.0.70:8171';
 export const domain = prod ? domainProd : domainLocal;
 
-export const serverPrefix = prod ? "/outsiders-arena-ui/" : "";
+export const serverPrefix = "";
 
 export const URLS = {
     playerLadderArena : 'http://' + domain + '/api/player/arena/ladder/',
