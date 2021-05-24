@@ -1,4 +1,4 @@
-import {  AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import {  AfterViewInit, Component, HostListener, Input, OnDestroy, OnInit } from '@angular/core';
 import { Battle, Character, Player, CharacterInstance, AbilityTargetDTO, Ability, Effect, BattleEffect, Portrait, PlayerEnergy} from 'src/app/model/api-models';
 import { serverPrefix } from 'src/app/utils/constants';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -12,6 +12,7 @@ import { interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators'
 import { ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
+import { asLiteral } from '@angular/compiler/src/render3/view/util';
 
 @Component({
   selector: 'arena-root',
@@ -111,6 +112,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	showAreYouSure: boolean;
 
 	gameOver$: Subject<boolean> = new Subject();
+	victory: boolean = false;
 
 	// ======================================================================================================================
 	// ------ LIFECYCLE -----------------------------------------------------------------------------------------------------
@@ -127,19 +129,26 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	ngAfterViewInit() {
-		this.initSubscriptions();
-	}
-
-	ngOnInit() {
 		// this.initSubscriptions();
 	}
 
+	ngOnInit() {
+	
+		this.gameOver$.next(false);
+		this.initSubscriptions();
+	}
+
 	ngOnDestroy() {
-		this.gameOver$.subscribe(x => {
-			if (!x) {
-				this.surrender();
-			}
-		})
+		console.log("WE DESTROYED THIS SHIT");
+		
+		if (!this.victory) {
+			this.surrender();
+		}
+	}
+
+	@HostListener('window:beforeunload', ['$event'])
+	unloadHandler(event: Event) {
+		this.surrender();
 	}
 
 	initSubscriptions() {
@@ -200,6 +209,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	unsubToBattle() {
 		this.gameOver$.next(true);
+		this.victory = true;
 		this.router.navigate(['/']);
 	}
 
@@ -1115,9 +1125,9 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 			let ability = this.chosenAbilities[index].ability;
 			var index2 = this.turnEffects.findIndex(e => (e.instanceId < 0 && e.name === effect.name));
 	
-			this.refundCostTemporary(ability);
 			this.chosenAbilities.splice(index, 1);
 			this.turnEffects.splice(index2, 1);
+			this.refundCostTemporary(ability);
 		}
 	}
 

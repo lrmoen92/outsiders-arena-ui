@@ -11,6 +11,8 @@ export class ArenaService {
 
     httpClient: HttpClient;
     websocket: WebSocket;
+    arenaId: number;
+    playerId: number;
 
     _websocketReady: BehaviorSubject<any> = new BehaviorSubject(false);
     websocketReady: Observable<any> = this._websocketReady.asObservable();
@@ -24,30 +26,34 @@ export class ArenaService {
 
     connectToLadder(player) {
       console.log('::Looking For Ladder Match');
+      this.playerId = player.id;
       return this.httpClient.get(URLS.playerLadderArena + player.id + '/' + player.level);
     }
   
     connectToQuick(player) {
       console.log('::Looking For Quick Match');
+      this.playerId = player.id;
       return this.httpClient.get(URLS.playerQuickArena + player.id + '/' + player.level);
     }
   
     connectByPlayerName(player : Player, name : string) {
       console.log('::Connecting to ' + name);
+      this.playerId = player.id;
       return this.httpClient.get(URLS.playerArena + player.id + '/' + name)
     }
 
     connectByArenaId(arenaId) {
-      this.connect(arenaId);
+      this.arenaId = arenaId;
+      this.connect();
     }
 
     webSocketOpen() {
       this._websocketReady.next(true);
     }
 
-    connect(arenaId) {
-      this.websocket = new WebSocket(URLS.battleSocket + arenaId);
-      console.log("::Connected to Arena: " + arenaId);
+    connect() {
+      this.websocket = new WebSocket(URLS.battleSocket + this.arenaId);
+      console.log("::Connected to Arena: " + this.arenaId);
       this.websocket.onopen = () => {
         this.handleMessage();
         this.webSocketOpen();
