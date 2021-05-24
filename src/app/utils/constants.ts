@@ -4,7 +4,7 @@ let prod = environment.production;
 
 export const domainLocal = 'localhost:8817';
 // export const domainProd = '192.168.0.34:8171';
-export const domainProd = '192.168.0.70:8171';
+export const domainProd = '75.168.202.60:8171';
 export const domain = prod ? domainProd : domainLocal;
 
 export const serverPrefix = "";
