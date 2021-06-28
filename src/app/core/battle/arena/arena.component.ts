@@ -1,18 +1,15 @@
 import {  AfterViewInit, Component, HostListener, Input, OnDestroy, OnInit } from '@angular/core';
 import { Battle, Character, Player, CharacterInstance, AbilityTargetDTO, Ability, Effect, BattleEffect, Portrait, PlayerEnergy} from 'src/app/model/api-models';
-import { serverPrefix } from 'src/app/utils/constants';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 import { ArenaStore } from 'src/app/utils/arena.store';
-import { CharacterStore } from 'src/app/utils/character.store';
 import { LoginStore } from 'src/app/utils/login.store';
-import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 import { interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators'
 import { ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
-import { asLiteral } from '@angular/compiler/src/render3/view/util';
 
 @Component({
   selector: 'arena-root',
@@ -108,7 +105,6 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	characterPortraits: Map<number, Portrait> = new Map();
 
 	battlePortraits: Map<string, Portrait> = new Map();
-	imgPrefix : string = serverPrefix;
 	showAreYouSure: boolean;
 
 	gameOver$: Subject<boolean> = new Subject();
@@ -324,7 +320,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 		if (!this.playingAudio) {
 	
 			this.playingAudio = new Audio();
-			this.playingAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+			this.playingAudio.src = "/assets/sounds/" + sound + ".wav";
 			this.playingAudio.volume = this.volume;
 			
 			this.playingAudio.load();
@@ -337,7 +333,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 			}
 			if (!this.secondaryAudio) {
 				this.secondaryAudio = new Audio();
-				this.secondaryAudio.src = this.imgPrefix + "/assets/sounds/" + sound + ".wav";
+				this.secondaryAudio.src = "/assets/sounds/" + sound + ".wav";
 				this.secondaryAudio.volume = this.volume;
 
 				this.secondaryAudio.load();

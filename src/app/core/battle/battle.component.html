@@ -22,11 +22,11 @@
         </div>
     </div>
     <div id="character-select" *ngIf="myCharacters">
-        <img *ngFor="let char of myCharacters" (click)="addCharacter(char.id)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
+        <img *ngFor="let char of myCharacters" (click)="addCharacter(char.id)" [src]="char.avatarUrl" class="ally-portrait-small">
             <div>
                 TEAM:
             </div>
-        <img *ngFor="let ally of allies" [src]="imgPrefix + ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
+        <img *ngFor="let ally of allies" [src]="ally.avatarUrl" class="ally-portrait-small" (click)="removeCharacter(ally.id)">
     </div>
     <div *ngIf="lookingForBattle">
         SEARCHING FOR BATTLE.... WAIT UP TO 30 SECONDS....

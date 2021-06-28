@@ -3,7 +3,7 @@ CHARACTER COMPONENT
 </div>
 
 <div>
-    <img *ngFor="let char of allCharacters | async" (click)="this.showCharacterInfo(char)" [src]="imgPrefix + char.avatarUrl" class="ally-portrait-small">
+    <img *ngFor="let char of allCharacters | async" (click)="this.showCharacterInfo(char)" [src]="char.avatarUrl" class="ally-portrait-small">
 </div>
 
 <div *ngIf="selectedCharacter">
@@ -12,7 +12,7 @@ CHARACTER COMPONENT
     </div>
     <div>
         ABILITIES: 
-        <img *ngFor="let ability of this.selectedCharacter.abilities" (click)="this.showAbilityInfo(ability)" [src]="imgPrefix + ability.abilityUrl" class="ally-portrait-small">
+        <img *ngFor="let ability of this.selectedCharacter.abilities" (click)="this.showAbilityInfo(ability)" [src]="ability.abilityUrl" class="ally-portrait-small">
     </div>
 </div>
 

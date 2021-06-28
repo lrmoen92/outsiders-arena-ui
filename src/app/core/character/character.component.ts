@@ -1,7 +1,6 @@
 import { Component, OnInit, } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Ability, Character } from 'src/app/model/api-models';
-import { serverPrefix } from 'src/app/utils/constants';
 import { CharacterStore } from '../../utils/character.store';
 
 @Component({
@@ -16,9 +15,6 @@ export class CharacterComponent implements OnInit {
 
   selectedCharacter : Character;
   selectedAbility : Ability;
-
-
-	imgPrefix : string = serverPrefix;
 
 	constructor(
     characterStore : CharacterStore

@@ -125,7 +125,7 @@
               <div class="ally-info-effects">
                 <span *ngFor="let effect of parseHiddenEffects(ally)" class="effect ally-effect">
                   <span [matTooltip]="effectStringParser(effect)" matTooltipClass="my-tooltip">
-                    <img [src]="imgPrefix + effect.avatarUrl">
+                    <img [src]="effect.avatarUrl">
                   </span>
                 </span>
               </div>
@@ -135,7 +135,7 @@
           <div class="abilities">
             <div *ngFor="let ally of tempAllies" class="ally-abilities">
               <div *ngFor="let ability of ally.abilities" class="ally-ability" (mouseleave)="hideAbilityPanel(false)" (mouseenter)="showAbilityInfo(ability)" (click)="clickAbility(ability)">
-                <img [ngStyle]="getAbilityStyle(ability)" [src]="imgPrefix + ability.abilityUrl" class="ally-ability-portrait">
+                <img [ngStyle]="getAbilityStyle(ability)" [src]="ability.abilityUrl" class="ally-ability-portrait">
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@
               <div class="enemy-info-effects">
                 <span *ngFor="let effect of parseHiddenEffects(enemy)" class="effect enemy-effect">
                   <span [matTooltip]="effectStringParser(effect)" matTooltipClass="my-tooltip">
-                    <img [src]="imgPrefix + effect.avatarUrl">
+                    <img [src]="effect.avatarUrl">
                   </span>
                 </span>
               </div>
@@ -191,7 +191,7 @@
         <div *ngIf="isReelNotEmpty()" id="chosenAbilities">
           <div cdkDropList cdkDropListOrientation="horizontal" class="example-list" (cdkDropListDropped)="drop($event)">
             <div *ngFor="let effect of turnEffects" class="example-box" cdkDrag>
-              <img [src]="imgPrefix + effect.avatarUrl" class="ally-ability-portrait">
+              <img [src]="effect.avatarUrl" class="ally-ability-portrait">
               <span class="reel-effect-name">
                 {{ effect.name }}
               </span>

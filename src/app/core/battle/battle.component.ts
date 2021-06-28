@@ -2,7 +2,6 @@ import { AfterViewInit, Component, OnDestroy, OnInit, } from '@angular/core';
 import { Battle, Character, Player, Portrait } from 'src/app/model/api-models';
 import { ArenaStore } from '../../utils/arena.store';
 import { CharacterStore } from '../../utils/character.store';
-import { serverPrefix } from '../../utils/constants';
 import { LoginStore } from '../../utils/login.store';
 import { take, takeUntil } from 'rxjs/operators'
 import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
@@ -27,8 +26,6 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
   player : Player;
 
   arenaId : number;
-
-  imgPrefix : string = serverPrefix;
 
   allies : Array<Character> = [];
   
@@ -77,7 +74,7 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
         for(let c of x) {
           let portrait : Portrait = {
             style : {opacity : 1.0},
-            url : this.imgPrefix + c.avatarUrl
+            url : c.avatarUrl
           }
           this.characterPortraits.set(c.id, portrait);
             if (this.player.characterIdsUnlocked.includes(c.id)) {
