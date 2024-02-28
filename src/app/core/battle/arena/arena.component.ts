@@ -1,5 +1,5 @@
 import {  AfterViewInit, Component, HostListener, Input, OnDestroy, OnInit } from '@angular/core';
-import { Battle, Character, Player, CharacterInstance, AbilityTargetDTO, Ability, Effect, BattleEffect, Portrait, PlayerEnergy} from 'src/app/model/api-models';
+import { Battle, Character, Player, Combatant, TargetCheckDTO, Ability, Effect, BattleEffect, Portrait, PlayerEnergy} from 'src/app/model/api-models';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 import { ArenaStore } from 'src/app/utils/arena.store';
@@ -39,11 +39,10 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	isPlayerOne : boolean = false;
 
 	@Input()
-	allies : Array<Character> = [];
-	tempAllies : Array<Character> = [];
+	allies : Array<Combatant> = [];
 
-	battleAllies : Array<CharacterInstance> = [];
-	battleEnemies : Array<CharacterInstance> = [];
+	battleAllies : Array<Combatant> = [];
+	battleEnemies : Array<Combatant> = [];
 
     _playerEnergy: BehaviorSubject<Array<PlayerEnergy>> = new BehaviorSubject([]);
 	playerEnergy: Observable<Array<PlayerEnergy>> = this._playerEnergy.asObservable();
@@ -84,7 +83,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	// V identified by effectID, or -1
 	turnEffects : Array<BattleEffect> = [];
-	chosenAbilities : Array<AbilityTargetDTO> = [];
+	chosenAbilities : Array<TargetCheckDTO> = [];
 
 	activeCharacterPosition : number = -1;
 	chosenAbility: Ability;
@@ -223,7 +222,6 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 					this.startTimer();
 					this.initEnergy();
 					this.subToVictory();
-					this.tempAllies = Object.create(this.allies);
 					this.isPlayerOne = this.player.id === this.battle.playerIdOne;
 				}
 
@@ -245,11 +243,10 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 				} else {
 					this.setPlayerEnergy(this.serverEnergyToPlayerEnergy(this.battle.playerTwoEnergy));
 				}
-				
-				this.sendCostCheck();
 
 				if (this.battle.turn === 0) {
 					for(let c of team) {
+						console.log(this.characterPortraits);
 						let portrait : Portrait = this.characterPortraits.get(c.characterId);
 						let battlePortrait : Portrait = Object.assign(portrait);
 
@@ -299,6 +296,8 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 				this.battleEnemies = enemies;
 				this.filterEffects(this.battleAllies, this.battleEnemies);
 				this.filterAbilities(this.battleAllies);
+				
+				this.sendCostCheck();
 				
 				if (!this.hasTurn) {
 					this.cleanUpPhase();
@@ -391,8 +390,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 				if (val === 60) {
 					this.onStart();
 				} else if (val === 8 && this.hasTurn) {
-					this.playAudio("timerlow");
-					// play warning sound
+					this.onWarning();
 				} else if (val === 0) {
 					this.onStop();
 				}
@@ -410,6 +408,11 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.playAudio("yourturn");
 	}
 
+	onWarning() {
+		this.playAudio("timerlow");
+		// play warning sound
+	}
+
 	onStop() {
 		// force turn end and clean up
 		if (this.hasTurn) {
@@ -419,7 +422,6 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 			}
 			this.sendTurnEndMessage();
 		}
-		
 	}
 
 	// ======================================================================================================================
@@ -845,43 +847,30 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 	
 	filterAbilities(battleAllies) {
-		let newAllies = [];
-		
-		for (let ally of this.allies) {
-			for (let battleAlly of battleAllies) {
-				if (ally.id === battleAlly.characterId) {
-		
-				let tempAlly : Character = JSON.parse(JSON.stringify((ally)));
-		
-				for (let effect of battleAlly.effects) {
-					if (effect) {
-						if (effect.statMods["COST_CHANGE"] !== null) {
-							let num = effect.statMods["COST_CHANGE"];
-							if (num > 0) {
-								for (let i = num; i > 0; i--) {
-									tempAlly.abilities.forEach(a => {
-										a.cost.push("RANDOM");
-									})
-								}
-							} else if (num < 0) {
-								for (let i = num; i < 0; i++) {
-									tempAlly.abilities.forEach(a => {
-										if (a.cost.includes("RANDOM")) {
-											a.cost.splice(a.cost.findIndex(e => {return e === "RANDOM"}), 1);
-										}
-									})
-								}
+		for (let battleAlly of battleAllies) {
+			for (let effect of battleAlly.effects) {
+				if (effect) {
+					if (effect.statMods["COST_CHANGE"] !== null) {
+						let num = effect.statMods["COST_CHANGE"];
+						if (num > 0) {
+							for (let i = num; i > 0; i--) {
+								battleAlly.abilities.forEach(a => {
+									a.cost.push("RANDOM");
+								})
+							}
+						} else if (num < 0) {
+							for (let i = num; i < 0; i++) {
+								battleAlly.abilities.forEach(a => {
+									if (a.cost.includes("RANDOM")) {
+										a.cost.splice(a.cost.findIndex(e => {return e === "RANDOM"}), 1);
+									}
+								})
 							}
 						}
 					}
 				}
-		
-				newAllies.push(tempAlly);
-				}
 			}
 		}
-	
-		this.tempAllies = newAllies;
 	}
 
 	getCharacterPosition(string) {
@@ -911,7 +900,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 	}
 
-	updateCharacterStyle(c : CharacterInstance) {
+	updateCharacterStyle(c : Combatant) {
 		let playerOneChar : boolean  = c.position > 2 ? false : true;
 		let suffix : string = playerOneChar ? "o" : "t";
 		let id : number = c.characterId;
@@ -922,7 +911,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.battlePortraits.set(indx, portrait);
 	}
 
-	getCharacterPortrait(c : CharacterInstance): string {
+	getCharacterPortrait(c : Combatant): string {
 		let playerOneChar : boolean  = c.position > 2 ? false : true;
 		let suffix : string = playerOneChar ? "o" : "t";
 		let id : number = c.characterId;
@@ -998,6 +987,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 			
 		} else if (this.isAbilityLocked(ability)) {
 			alert("Can't use that now!")
+			// mid round energy trades are funky because of this // todo:
 		} else if(this.totalSpentEnergy > 0 && !this.abilitiesAreChosen()) {
 			alert("Finish your energy trade or put your spent energy back before choosing abilities!")
 		} else {
@@ -1055,7 +1045,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
     confirmAbility(chosenAbility, tarArray) {
 
 		// form and add AbiltyTargetDTOS to array
-		let dto = new AbilityTargetDTO;
+		let dto = new TargetCheckDTO;
 		dto.ability = chosenAbility;
 		dto.targetPositions = tarArray;
 		dto.characterPosition = this.activeCharacterPosition - (this.isPlayerOne ? 0 : 3);
@@ -1201,7 +1191,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 		return final;
 	}
 
-	parseHiddenEffects(character : CharacterInstance) : Array<Effect> {
+	parseHiddenEffects(character : Combatant) : Array<Effect> {
 		let effects = [];
 		for (let e of character.effects) {
 			if (e.visible) {
@@ -1238,7 +1228,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	sendTargetCheck(){
-		let dto : AbilityTargetDTO = {
+		let dto : TargetCheckDTO = {
 			ability : this.chosenAbility,
 			characterPosition : this.activeCharacterPosition,
 			targetPositions : []
@@ -1266,7 +1256,7 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 	
 	sendTurnEndMessage() {
 
-		let abilityDTOs : Array<AbilityTargetDTO> = [];
+		let abilityDTOs : Array<TargetCheckDTO> = [];
 		let effects : Array<BattleEffect> = this.turnEffects;
 
 		let finalEffects : Array<BattleEffect> = [];
@@ -1354,7 +1344,8 @@ export class ArenaComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	allyAbilities() : Array<Ability> {
 		let allAbilities = [];
-		for (let ally of this.tempAllies) {
+		console.log(this.battleAllies);
+		for (let ally of this.battleAllies) {
 			for (let ability of ally.abilities) {
 				allAbilities.push(ability);
 			}

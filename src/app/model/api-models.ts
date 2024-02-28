@@ -53,7 +53,7 @@ export class Character {
     abilities : Array<Ability>;
 }
 
-export class CharacterInstance {
+export class Combatant extends Character {
     hp : number;
     // player 1 (1, 2, 3) player 2 (4, 5, 6)
     position : number;
@@ -63,22 +63,47 @@ export class CharacterInstance {
     highlighted : Boolean;
 }
 
-export class AbilityTargetDTO {
+export class WebSocketDTO<T> {
+    arenaId: number;
+    playerId: number;
+    type: string;
+    dto: T;
+}
+
+export class MatchMakingDTO {
+    queue: string;
+    char1: number;
+    char2: number;
+    char3: number;
+}
+
+export class EnergyTradeDTO {
+    spent : Array<string>;
+    chosen : string;
+}
+
+export class TargetCheckDTO {
     ability : Ability;
     characterPosition: number;
     targetPositions : Array<number>;
 }
 
-export class BattleTurnDTO {
+export class TurnEndDTO {
     spentEnergy : any;
     effects : Array<BattleEffect>;
-    abilities : Array<AbilityTargetDTO>;
+    abilities : Array<TargetCheckDTO>;
 }
 
 export class CostCheckDTO {
-    chosenAbilities : Array<AbilityTargetDTO>;
+    chosenAbilities : Array<TargetCheckDTO>;
     allyCosts : Array<Ability>;
     spentEnergy : Array<string>;
+}
+
+export class GameEndDTO {
+    victory: boolean;
+    progressString: string;
+    player: Player;
 }
 
 export class Portrait {
@@ -142,15 +167,9 @@ export class Battle {
     arenaId : number;
     playerIdOne : number;
     playerIdTwo : number;
-    playerOneTeam : Array<CharacterInstance>;
-    playerTwoTeam : Array<CharacterInstance>;
+    playerOneTeam : Array<Combatant>;
+    playerTwoTeam : Array<Combatant>;
     playerOneEnergy : Map<string, number>;
     playerTwoEnergy : Map<string, number>;
-}
-
-export class GameEnd {
-    victory: boolean;
-    progressString: string;
-    player: Player;
 }
 

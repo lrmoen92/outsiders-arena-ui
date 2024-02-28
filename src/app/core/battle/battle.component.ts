@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnDestroy, OnInit, } from '@angular/core';
-import { Battle, Character, Player, Portrait } from 'src/app/model/api-models';
+import { Battle, Combatant, Player, Portrait } from 'src/app/model/api-models';
 import { ArenaStore } from '../../utils/arena.store';
 import { CharacterStore } from '../../utils/character.store';
 import { LoginStore } from '../../utils/login.store';
@@ -13,12 +13,12 @@ import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 })
 export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  allCharacters$ : Observable<Array<Character>>;
-  allCharacters : Array<Character>;
+  allCombatants$ : Observable<Array<Combatant>>;
+  allCombatants : Array<Combatant>;
 
   characterPortraits : Map<number, Portrait> = new Map();
 
-  myCharacters : Array<Character> = [];
+  myCharacters : Array<Combatant> = [];
 
   inBattle : boolean;
 
@@ -27,7 +27,7 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 
   arenaId : number;
 
-  allies : Array<Character> = [];
+  allies : Array<Combatant> = [];
   
   opponentName : string;
 
@@ -70,14 +70,15 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
     this.characterStore.getCharacters()
 	.pipe(takeUntil(this.destroy$))
 	.subscribe(x => {
-      this.allCharacters = x;
+      this.allCombatants = x;
+	  console.log(this.allCombatants);
         for(let c of x) {
           let portrait : Portrait = {
             style : {opacity : 1.0},
             url : c.avatarUrl
           }
-          this.characterPortraits.set(c.id, portrait);
-            if (this.player.characterIdsUnlocked.includes(c.id)) {
+          this.characterPortraits.set(c.characterId, portrait);
+            if (this.player.characterIdsUnlocked.includes(c.characterId)) {
               this.myCharacters.push(c);
             }
         }
@@ -107,11 +108,11 @@ export class BattleComponent implements OnInit, AfterViewInit, OnDestroy {
 	// ======================================================================================================================
 
 	removeCharacter(id) {
-		this.allies.splice(this.allies.findIndex(e => {return e.id === id}), 1);
+		this.allies.splice(this.allies.findIndex(e => {return e.characterId === id}), 1);
 	}
 
 	addCharacter(id) {
-		let char : Character = this.allCharacters.find(e => {return e.id === id});
+		let char : Combatant = this.allCombatants.find(e => {return e.characterId === id});
 		if(this.allies.includes(char)) {
 			alert ("You already have that character");
 		} else if (this.allies.length < 3) {

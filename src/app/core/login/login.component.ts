@@ -75,9 +75,11 @@ export class LoginComponent {
       // look into cryptoJS for encrypting these fields TODO:
       let auth = {
         "name" : this.playerName,
-        "email" : this.playerEmail,
-        "password" : this.playerPassword,
-        "avatar" : null
+        "avatar" : null,
+        "credentials": {
+          "email" : this.playerEmail,
+          "password" : this.playerPassword
+        }
       }
 
       // build auth object with name or email, and password, and login TODO::

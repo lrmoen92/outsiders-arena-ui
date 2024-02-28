@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { Ability, AbilityTargetDTO, Battle, BattleEffect, BattleTurnDTO, Character, CharacterInstance, CostCheckDTO, GameEnd, Player } from '../model/api-models';
+import { TargetCheckDTO, Battle, TurnEndDTO, Character, CostCheckDTO, EnergyTradeDTO, GameEndDTO, Player, MatchMakingDTO, WebSocketDTO } from '../model/api-models';
 import { ArenaService } from './arena.service';
 
 @Injectable(
@@ -36,8 +36,8 @@ export class ArenaStore {
     _availableTargets: BehaviorSubject<Array<number>> = new BehaviorSubject([]);
     availableTargets: Observable<Array<number>> = this._availableTargets.asObservable();
 
-    _victory: BehaviorSubject<GameEnd> = new BehaviorSubject(null);
-    victory: Observable<GameEnd> = this._victory.asObservable();
+    _victory: BehaviorSubject<GameEndDTO> = new BehaviorSubject(null);
+    victory: Observable<GameEndDTO> = this._victory.asObservable();
 
     playerId: number;
     loserId: number;
@@ -47,7 +47,7 @@ export class ArenaStore {
       return this.victory;
     }
 
-    setVictory(next : GameEnd) {
+    setVictory(next : GameEndDTO) {
       this._victory.next(next);
     }
 
@@ -277,7 +277,7 @@ export class ArenaStore {
       console.log("CURRENT ID" + this.getCurrentPlayer().id);
       console.log("LOSER ID" + this.loserId);
       
-      let gameEnd = new GameEnd();
+      let gameEnd = new GameEndDTO();
       if (this.getCurrentPlayer().id === this.loserId) {
         gameEnd.victory = false;
         gameEnd.progressString = msg.loserString;
@@ -318,14 +318,17 @@ export class ArenaStore {
     sendMatchMakingMessage(playerId, queue, allies) {
       console.log("::Sent MATCH_MAKING Message");
       this.playerId = playerId;
-      let msg = {
-        type: "MATCH_MAKING",
+      let dto : MatchMakingDTO = {
         queue: queue,
         char1: allies[0].id,
         char2: allies[1].id,
         char3: allies[2].id,
+      }
+      let msg : WebSocketDTO<MatchMakingDTO> = {
+        type: "MATCH_MAKING",
         playerId: playerId,
-        arenaId: this.arenaId
+        arenaId: this.arenaId,
+        dto: dto
       };
       this.arenaService.sendWebsocketMessage(JSON.stringify(msg));
     }
@@ -337,35 +340,43 @@ export class ArenaStore {
         chosenAbilities : chosenAbilities,
         spentEnergy : spentEnergy
       }
+      console.log(costCheckDTO);
       
       const payload = {
         type: "COST_CHECK",
         playerId: this.getCurrentPlayer().id,
-        costCheckDTO: costCheckDTO
+        dto: costCheckDTO,
+        arenaId: this.arenaId
       };
 
       this.arenaService.sendWebsocketMessage(JSON.stringify(payload));
     }
 
-    sendTargetCheck(dto : AbilityTargetDTO){
+    sendTargetCheck(dto : TargetCheckDTO){
       console.log("::Sent TARGET_CHECK Message");
+      console.log(dto);
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "TARGET_CHECK",
           playerId: this.getCurrentPlayer().id,
-          abilityTargetDTO: dto
+          dto: dto,
+          arenaId: this.arenaId
         })
       )
     }
 
     sendEnergyTrade(energySpent : Array<string>, energyGained : string){
       console.log("::Sent ENERGY_TRADE Message");
+      let dto : EnergyTradeDTO = {
+        spent: energySpent,
+        chosen: energyGained
+      }
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "ENERGY_TRADE",
           playerId: this.getCurrentPlayer().id,
-          spent: energySpent,
-          chosen: energyGained
+          arenaId: this.arenaId,
+          dto: dto
         })
       )
     }
@@ -380,12 +391,16 @@ export class ArenaStore {
     }
 
     sendGameEndMessage() {
+      let dto = {
+        loserId: this.loserId,
+        winnerId: this.winnerId,
+      }
       this.arenaService.sendWebsocketMessage(
         JSON.stringify({
           type: "GAME_END",
-          loserId: this.loserId,
-          winnerId: this.winnerId,
-          arenaId: this.arenaId
+          playerId: this.playerId,
+          arenaId: this.arenaId,
+          dto: dto
         })
       )
     }
@@ -400,7 +415,7 @@ export class ArenaStore {
         "DIVINITY": spentEnergy.get("DIVINITY")
       }
 
-      let battleTurnDTO : BattleTurnDTO = {
+      let battleTurnDTO : TurnEndDTO = {
         spentEnergy : enrgy,
         abilities : abilityDTOs,
         effects : finalEffects
@@ -409,7 +424,8 @@ export class ArenaStore {
       const payload = {
         type: "TURN_END",
         playerId: this.getCurrentPlayer().id,
-        battleTurnDTO: battleTurnDTO
+        dto: battleTurnDTO,
+        arenaId: this.arenaId
       }
 
       console.log(payload);

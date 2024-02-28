@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { Character } from 'src/app/model/api-models';
+import { Character, Combatant } from 'src/app/model/api-models';
 import { CharacterService } from './character.service';
 
 @Injectable(
@@ -13,8 +13,8 @@ export class CharacterStore {
 
   charactersLoaded : boolean = false;
 
-  _allCharacters: BehaviorSubject<Array<Character>> = new BehaviorSubject([]);
-  allCharacters: Observable<Array<Character>> = this._allCharacters.asObservable();
+  _allCharacters: BehaviorSubject<Array<Combatant>> = new BehaviorSubject([]);
+  allCharacters: Observable<Array<Combatant>> = this._allCharacters.asObservable();
 
   constructor(characterService: CharacterService) {
     this.characterService = characterService;
@@ -24,14 +24,14 @@ export class CharacterStore {
     this.charactersLoaded = b;
   }
 
-  setCharacters(chars : Array<Character>) {
+  setCharacters(chars : Array<Combatant>) {
     this._allCharacters.next(chars);
   }
 
   initCharacters() {
     this.characterService.initCharacters().pipe(take(1)).subscribe(
       x => {
-        this.setCharacters(<Array<Character>> x);
+        this.setCharacters(<Array<Combatant>> x);
       },
       y => {
 
@@ -42,7 +42,7 @@ export class CharacterStore {
     );
   }
 
-  getCharacters() : Observable<Array<Character>> {
+  getCharacters() : Observable<Array<Combatant>> {
 
     if (!this.charactersLoaded) {
       this.initCharacters();
